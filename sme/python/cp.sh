@@ -1,0 +1,1 @@
+cp python/TimePhysicsModel.py ../../HiggsAnalysis/CombinedLimit/python/
