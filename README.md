@@ -134,29 +134,45 @@ Running pre-fit plots:
 
 
 
-# c_munu fit
+# SME analysis
 
     > cd sme
 
-Create the workspace with the good physics model :
+The wilson coefficient is ssomething like "cLXX, dXY, ... etc"
+Create the workspace with the SME physics model, here with the example of cLXX coefficient:
 
-    > python scripts/workspace_creator.py 'observable' 'year' 'wilson'
+    > python scripts/workspace_creator.py n_bjets 2016 cLXX
 
-The wilson coefficient is ssomething like "cLXX, dXY, ... etc" 
+Producing workspaces in one go for all coefficients:
 
-To make the fit : 
+    > python scripts/launch_workspace.py n_bjets 2016
+    > python scripts/launch_workspace.py n_bjets 2017
 
-    > python scripts/fit_alone.py 'observable' 'year' 'wilson' 'asimov'
+Produce combined workspace:
 
-exemple : 
+    > python scripts/combine_years.py n_bjets
 
-    > python scripts/fit_alone.py m_dilep 2016 cLXX asimov
+Running a simple fit for one coefficient, example:
 
-For impacts : 
+    > python scripts/fit_alone.py n_bjets 2016 cLXX asimov
 
-    > python scripts/impacts.py m_dilep 2016 cLXX asimov
+Running the fit for all coefficients:
 
-Impacts plots are stored in 'impacts' directory 
+    > python scripts/launch_fit.py n_bjets 2016 asimov
+    > python scripts/launch_fit.py n_bjets 2017 asimov
+    > python scripts/launch_fit.py n_bjets Comb asimov
 
+Once the fits are done, one can produce a latex table of the results:
 
+    > python scripts/write_latex_table.py n_bjets asimov > impacts/Comb/asimov/Table_Results_n_bjets.txt
+
+Impacts plots can be done (do not run this since it will take a lot of time!), example: 
+
+    > python scripts/impacts.py n_bjets 2016 cLXX asimov
+
+Uncertainty breakdown in stat, syst, MCstat; it produces a latex table as well (here for the combination):
+
+    > python scripts/uncertainty_breakdown.py n_bjets Comb asimov > log_breakdown
+
+To be added: a finer breakdown of the uncertainties.
 
