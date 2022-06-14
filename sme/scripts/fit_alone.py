@@ -47,10 +47,18 @@ cmd = ['combine',
        '-M', 
        'MultiDimFit',
        '--algo=singles', 
+       '--robustFit',
+       '1', 
        cmd_input]
 for l in asimov_param:
     cmd.append(l)
 
+if ((wilson.find("XZ")!=-1 or wilson.find("YZ")!=-1)):
+    cmd.append('--setParameterRanges')
+    cmd.append(wilson+'=-10,10')
+
+
+print cmd
 output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
 

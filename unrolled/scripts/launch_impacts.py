@@ -36,7 +36,7 @@ print ' >>> combine on datacard '
 print '-------------------------'
     
 
-cmd = 'text2workspace.py ./inputs/'+year+'/'+observable+'_unrolled_datacard.txt '
+cmd = 'text2workspace.py ./inputs/'+year+'/'+observable+'_datacard.txt '
 cmd += '-o '+observable+'_impacts.root'
 
 

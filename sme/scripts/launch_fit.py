@@ -18,47 +18,47 @@ def asimov_param(w):
     return []
 
 wilson_list_XX = [
-    'fXX_L',
-    'fXX_R',
-    'fXX_C',
-    'fXX_D'
+    'cLXX',
+    'cRXX',
+    'cXX',
+    'dXX'
 ]
 wilson_list_XY = [
-    'fXY_L',
-    'fXY_R',
-    'fXY_C',
-    'fXY_D'
+    'cLXY',
+    'cRXY',
+    'cXY',
+    'dXY'
 ]
 wilson_list_XZ = [
-    'fXZ_L',
-    'fXZ_R',
-    'fXZ_C',
-    'fXZ_D'
+    'cLXZ',
+    'cRXZ',
+    'cXZ',
+    'dXZ'
 ]
 wilson_list_YZ = [
-    'fYZ_L',
-    'fYZ_R',
-    'fYZ_C',
-    'fYZ_D'
+    'cLYZ',
+    'cRYZ',
+    'cYZ',
+    'dYZ'
 ]
 
 wilson_list_all = [
-    'fXX_L',
-    'fXY_L',
-    'fXZ_L',
-    'fYZ_L',
-    'fXX_R',
-    'fXY_R',
-    'fXZ_R',
-    'fYZ_R',
-    'fXX_C',
-    'fXY_C',
-    'fXZ_C',
-    'fYZ_C',
-    'fXX_D',
-    'fXY_D',
-    'fXZ_D',
-    'fYZ_D'
+    'cLXX',
+    'cLXY',
+    'cLXZ',
+    'cLYZ',
+    'cRXX',
+    'cRXY',
+    'cRXZ',
+    'cRYZ',
+    'cXX',
+    'cXY',
+    'cXZ',
+    'cYZ',
+    'dXX',
+    'dXY',
+    'dXZ',
+    'dYZ'
 ]
 
 wilson = raw_input('choose wilson benshmark (XX, XY, XZ, YZ, all) : ')
@@ -112,9 +112,16 @@ for i in range(len(cmd_input)):
            '-M', 
            'MultiDimFit',
            '--algo=singles', 
+           '--robustFit',
+           '1',
            cmd_input[i]]
     for a in asimov_param(wilson_list[i]):
         cmd.append(a)
+    #if (asimov=="" and (wilson_list[i].find("XZ")!=-1 or wilson_list[i].find("YZ")!=-1)):
+    cmd.append('--setParameterRanges')
+    cmd.append(wilson_list[i]+'=-30,30')
+
+    print cmd
 
     output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     output = output.splitlines()
@@ -132,7 +139,7 @@ for l in fit_values:
         text += str(i) + ' '
     text += '\n'
 
-outname = './results/fit_'+observable+'_'+year
+outname = './impacts/'+year+'/'+asimov+'/fit_'+observable+'_'+year
 if asimov == 'asimov':
     outname += '_'+asimov
 
