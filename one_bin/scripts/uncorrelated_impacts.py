@@ -28,18 +28,20 @@ if asimov == 'asimov':
 ## Core
 ###################
 
-cmd1 = 'combineTool.py -M Impacts -d ./inputs/combine_'+observable+'_24bins_'+year+'_workspace.root '+asi+' -m 125 '
+cmd1 = 'combineTool.py -M Impacts -n .impact_'+year+' -d ./inputs/combine_'+observable+'_24bins_'+year+'_workspace.root '+asi+' -m 125 '
 cmd2 = cmd1
 cmd3 = cmd1
 
 cmd1 += '--doInitialFit --robustFit 1'
 cmd2 += '--robustFit 1 --doFits'
-cmd3 += '-o '+observable+'_impacts.json '
+cmd3 += '-o '+observable+'_impacts_'+year+'.json '
 
-cmd4 = 'plotImpacts.py -i '+observable+'_impacts.json -o '+observable+'_impacts'
+cmd4 = 'plotImpacts.py -i '+observable+'_impacts_'+year+'.json -o '+observable+'_impacts_'+year
 
 os.system(cmd1)
 os.system(cmd2)
 os.system(cmd3)
 os.system(cmd4)
 
+cmdnew = 'mv '+observable+'_impacts_'+year+'.pdf impacts/'+year+'/'+observable+'_differential_impacts_'+ year+'.pdf'
+os.system(cmdnew)

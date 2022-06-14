@@ -32,13 +32,28 @@ outwork = 'combine_'+observable+'_'+str(n)+'bins_'+year+'_workspace.root'
 cmd = 'text2workspace.py -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel '
 cmd += '--PO verbose '
 for i in range(n):
-    cmd += "--PO 'map=ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' "
+    if (year!='Comb'): cmd += "--PO 'map=ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' "
+    else: cmd += "--PO 'map=ch1_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' " +"--PO 'map=ch2_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' " 
+    #else: cmd += "--PO 'map=ch*_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' "
 cmd += inpath + outcard
 cmd += ' -o '+outpath + outwork
 
+#print cmd
+
 ## new datacard
-print('Cards merging')
-os.system('cd '+inpath+' && combineCards.py '+observable+'*_datacard.txt > '+outcard)
+if (year!='Comb'):
+   print('Cards merging')
+#    os.system('cd '+inpath+' && combineCards.py '+observable+'*_datacard.txt > '+outcard)
+   cmd2 = "cd "+inpath+" && "
+   cmd2 += "combineCards.py "
+   for i in range(n):
+     cmd2 += observable+'_'+str(n)+'_'+str(i)+'_datacard.txt '
+   cmd2 += '> '+outcard 
+   print cmd2
+   os.system(cmd2)
+
 ## workspace generator
 print('Workspace generator')
+#os.system(cmd2)
+print cmd
 os.system(cmd)
