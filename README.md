@@ -88,27 +88,51 @@ In scripts/goodnessoffit.py, combine must be run. There is an option to not run 
 
     > cd one_bin
 
-To Generate the workspace : 
+To generate the workspaces (still on the example of n_bjets): 
     
-    > python scripts/workspace_multiSignalModel.py 'observable' 'year'
+    > python scripts/workspace_multiSignalModel.py n_bjets 2016
+    > python scripts/workspace_multiSignalModel.py n_bjets 2017
 
-a workspace will be created in 'inputs' directory. 
+A workspace will be created in 'inputs' directory.
 
-To launch MultiDimFit methode 
+Making the combined workspace:
 
-    > scripts/launch_multidimfit.py 'workspace' 'asimov'
+    > python scripts/combine_years.py n_bjets
+    > python scripts/workspace_multiSignalModel.py n_bjets Comb
 
-Type 'asimov' as second argument to get an asimov test run of combine.
+Running simple fit and producing the plot of signal strength vs sidereal time:
 
-    exemple :
+    > python scripts/launch_multidimfit.py n_bjets 2016 asimov
+    > python scripts/launch_multidimfit.py n_bjets 2017 asimov
+    > python scripts/launch_multidimfit.py n_bjets Comb asimov
 
-    > scripts/launch_multidimfit.py inputs/combine_m_dilep_24bins_2017_workspace.root asimov
+Running impact plots (extremely CPU intensive... not to be done!):
 
-For impacts : 
+    > python scripts/uncorrelated_impacts.py n_bjets 2016 asimov
+    > python scripts/uncorrelated_impacts.py n_bjets 2017 asimov
+    > python scripts/uncorrelated_impacts.py n_bjets Comb asimov
 
-    > scripts/uncorrelated_impacts.py 'observable' 'year' 'asimov'
+Running the fit with uncertainty breakdown in stat+syst (not so useful since detailed breakdown are also possible):
 
-The impact output is in the root directory
+    > python scripts/uncertainty_breakdown.py n_bjets 2016 asimov
+    > python scripts/uncertainty_breakdown.py n_bjets 2017 asimov
+    > python scripts/uncertainty_breakdown.py n_bjets Comb asimov
+
+Uncertainty breakdown details (here example of Comb only):
+
+    > python scripts/uncertainty_breakdown_detailed.py n_bjets Comb time_breakdown asimov > log_time_breakdown
+    > python scripts/uncertainty_breakdown_detailed.py n_bjets Comb kind_breakdown asimov > log_kind_breakdown
+    > python scripts/uncertainty_breakdown_detailed.py n_bjets Comb exp_breakdown asimov > log_exp_breakdown
+    > python scripts/uncertainty_breakdown_detailed.py n_bjets Comb theory_breakdown asimov > log_theory_breakdown
+
+(Redirection is useful to check if everything went fine)
+
+Running pre-fit plots:
+
+    > scripts/prepostfit_plots_differential.py n_bjets 2016 asimov "number of b jets #times sidereal time bin"
+    > scripts/prepostfit_plots_differential.py n_bjets 2017 asimov "number of b jets #times sidereal time bin"
+
+
 
 # c_munu fit
 
