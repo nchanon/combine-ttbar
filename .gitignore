@@ -1,4 +1,10 @@
 *.root
 *.txt
 *.pdf
+*.png
+*.log
+*.out
+log*
+*.pyc
+*.out
 *.json
