@@ -129,8 +129,8 @@ Uncertainty breakdown details (here example of Comb only):
 
 Running pre-fit plots:
 
-    > scripts/prepostfit_plots_differential.py n_bjets 2016 asimov "number of b jets #times sidereal time bin"
-    > scripts/prepostfit_plots_differential.py n_bjets 2017 asimov "number of b jets #times sidereal time bin"
+    > python scripts/prepostfit_plots_differential.py n_bjets 2016 asimov "number of b jets #times sidereal time bin"
+    > python scripts/prepostfit_plots_differential.py n_bjets 2017 asimov "number of b jets #times sidereal time bin"
 
 
 
