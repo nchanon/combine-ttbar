@@ -24,12 +24,14 @@ tdr.setTDRStyle()
 parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
-parser.add_argument('asimov',nargs='?', help='set if asimov test')
+parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
+parser.add_argument('wilson', help='display your wilson coefficient')
 parser.add_argument('title', help='display your observable title')
 
 args = parser.parse_args()
 observable = args.observable
 year = args.year
+wilson = args.wilson
 asimov = args.asimov
 title = args.title
 
@@ -39,35 +41,19 @@ for i in range(24):
 
 asi = ''
 sasimov=''
-#    asi = '--expectSignal 1 -t -1'
 if asimov == 'asimov':
-    print '################'
-    print '# Asimov test : '
-    print '################'
-    print ''
-    asi = ' --redefineSignalPOIs '
-    for i in range(24):
-        asi += pois[i]
-        if i != 23:
-            asi += ','
-    asi += ' --setParameters '
-    for i in range(24):
-        asi += pois[i]+'=1'
-        if i != 23:
-            asi += ','
-    asi += ' -t -1 '
+    #asi += '--expectSignal 0  -t -1 '
+    asi  += '--setParameters '+wilson+'=0 -t -1 '
     sasimov = '_asimov'
+elif asimov == 'injectiontest':
+    asi  += '--setParameters '+wilson+'=1 -t -1 '
+    sasimov = '_injectiontest'
 else:
     sasimov = '_data'
 
-#def asimov_param(asimov):
-#    if asimov == 'asimov':
-#        return '--expectSignal 1 -t -1'
-#    else:
-#        return ''
 
-doPrePostFitOnly = True
-#doPrePostFitOnly = False
+#doPrePostFitOnly = True
+doPrePostFitOnly = False
 
 
 fitkind = 'prefit'
@@ -91,101 +77,58 @@ npoints=20
 print '-------------------------'
 print ' >>> combine on datacard '
 print '-------------------------'
-    
-#if (doPrePostFitOnly==False):
-#    cmd1 = 'combineTool.py -M Impacts -n .Impact_'+year+' -d inputs/'+observable+'_inclusive_workspace_'+year+'.root '+asi+' -m 125 '
-#    cmd2 = cmd1
-#    cmd3 = cmd1
-#    cmd1 += '--doInitialFit --robustFit 1'
-#    cmd2 += '--robustFit 1 --doFits'
-#    cmd3 += '-o '+observable+'_inclusive_impacts_'+year+sasimov+'.json '
-
-#    cmd4 = 'plotImpacts.py -i '+observable+'_inclusive_impacts_'+year+sasimov+'.json -o '+observable+'_inclusive_impacts_'+year+sasimov
-        
-#    os.system(cmd1)
-#    os.system(cmd2)
-#    os.system(cmd3)
-#    os.system(cmd4)
-
-#    if asimov == 'asimov':
-#        os.system('mv '+observable+'_inclusive_impacts_'+year+'* impacts/'+year+'/asimov/')
-#        os.system('mv *Impact_'+year+'*.root impacts/'+year+'/asimov/')
-#    else:
-#        os.system('mv '+observable+'_inclusive_impacts_'+year+'* impacts/'+year+'/')
-#        os.system('mv *Impact_'+year+'*.root  impacts/'+year+'/')
-#combine_n_bjets_24bins_Comb_workspace.root
 
 if (doPrePostFitOnly==False):
     if (fitkind=='prefit'):
-	finput = 'inputs/combine_'+observable+'_24bins_'+year+'_workspace.root'
-    else:
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+asimov+' --robustFit 1 '
-        cmd2 += ' -d inputs/'+observable+'_inclusive_workspace_'+year+'.root '
-        cmd2 += asi #asimov_param(asimov)
-        cmd2 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
-        cmd2 += ' --saveWorkspace'
-	os.system(cmd2)
-	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
+	finput = './inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root'
+    #else:
+    #    cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+asimov+' --robustFit 1 '
+    #    cmd2 += ' -d inputs/'+observable+'_inclusive_workspace_'+year+'.root '
+    #    cmd2 += asi #asimov_param(asimov)
+    #    cmd2 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
+    #    cmd2 += ' --saveWorkspace'
+    #	os.system(cmd2)
+    #	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+' --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
-    cmd5 += '-n .prefit_'+observable+'_'+year+'_'+asimov
+    cmd5 += '-n .prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
     #cmd5 += ' --skipBOnlyFit --plots'
     os.system(cmd5)
 
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
 
-#exit()
 
-fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+asimov+'.root',"READ")
-#fDiagnostics = TFile("fitDiagnostics.Test.root","READ")
-
+fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root',"READ")
 
 ###################
 ## Nuisances checks
 ###################
 
 tolerance = 0.05
-poi = 'r_0'
-#poi = 'r_1'
-#poi = 'r_18'
 
-cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '
-cmd6 += poi
-#for i in range(24):
-#    cmd6 += pois[i]
-#    if (i!=23): 
-#        cmd6 += ','
-cmd6 += ' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log'
+cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '+wilson+' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log'
 print cmd6
 os.system(cmd6)
-
-
 
 syst_list = []
 syst_uncert = []
 
-file = open('diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log')
+file = open('diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log')
 iline=0
 for line in file:
     j = 0
-    isHighlightedFirst = False
-    isHighlightedSecond = False
+    isHighlighted = False
     for word in line.split():
-        print(str(iline)+' j='+str(j)+' '+word)
-        if iline>2 and j==0:
-            syst_list.append(word)
-        if iline>2 and j==1 and word=='!':
-            isHighlightedFirst = True
-        if iline>2 and j==3 and word=='!':
-            isHighlightedSecond = True
-        if iline>2 and j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
-            syst_uncert.append(float(word))
-        if iline>2 and j==5 and isHighlightedSecond==True:
+        #print(str(iline)+' j='+str(j)+' '+word)
+	if iline>0 and j==0: 
+	    syst_list.append(word)
+	if iline>0 and j==1 and word=='!':
+	    isHighlighted = True
+	if iline>0 and j==4 and isHighlighted==False:
+	    syst_uncert.append(float(word))
+	if iline>0 and j==6 and isHighlighted==True:
             syst_uncert.append(float(word[:-1]))
-        if iline>2 and j==6 and isHighlightedFirst==True:
-            syst_uncert.append(float(word[:-1]))
-
-        j += 1
+	j += 1
     iline += 1
 
 print str(len(syst_list))+ ' ' + str(len(syst_uncert))
@@ -200,16 +143,13 @@ pad.SetBottomMargin(0.35)
 pad.Draw()
 pad.cd()
 
-
-
-syst_uncert_new = []
-syst_list_new = []
-
-if asimov=='asimov':
+if asimov=='injectiontest':
+    syst_uncert_new = []
+    syst_list_new = []
     for i in range(len(syst_uncert)):
-        if syst_uncert[i]<0.95:
-            syst_uncert_new.append(syst_uncert[i])
-            syst_list_new.append(syst_list[i])
+	if syst_uncert[i]<0.95:
+	    syst_uncert_new.append(syst_uncert[i])
+	    syst_list_new.append(syst_list[i])
     #syst_list.clear()
     #syst_list = syst_list_new
     #syst_uncert.clear()
@@ -219,8 +159,11 @@ else:
     syst_list_new = syst_list
     syst_uncert_new = syst_uncert
 
+    print str(len(syst_list_new))+ ' ' +srt(len(syst_uncert_new))
+
 hist_nuis = TH1F("hist_nuis","hist_nuis",len(syst_list_new),0,len(syst_list_new))
 hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new),0,len(syst_list_new))
+
 
 for i in range(len(syst_list_new)):
     hist_nuis.SetBinContent(1+i,1)
@@ -228,7 +171,6 @@ for i in range(len(syst_list_new)):
     hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
     #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
     hist_nuis_pulled.SetBinContent(1+i,0)
-
 
 hist_nuis.SetMinimum(0)
 hist_nuis.SetMaximum(1.2)
@@ -243,13 +185,12 @@ hist_nuis_pulled.Draw("ESAME")
 latex = TLatex()
 latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
 latex.SetNDC()
-latex.DrawLatex(0.25,0.9,year+' '+poi+'  '+asimov)
+latex.DrawLatex(0.25,0.9,year+' '+wilson+'  '+asimov)
 
 
-canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.pdf')
+canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.pdf')
 raw_input()
 sys.exit()
-
 
 ###################
 ## Correlation plot

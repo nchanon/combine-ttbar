@@ -10,16 +10,30 @@ args = parser.parse_args()
 observable = args.observable
 asimov = args.asimov
 
-results_2016 = open('impacts/2016/'+asimov+'/fit_'+observable+'_2016_'+asimov+'.txt')
-results_2017 = open('impacts/2017/'+asimov+'/fit_'+observable+'_2017_'+asimov+'.txt')
-results_Comb = open('impacts/Comb/'+asimov+'/fit_'+observable+'_Comb_'+asimov+'.txt')
+if asimov=='asimov':
+    sasimov='_asimov'
+else:
+    sasimov=''
+
+results_2016 = open('impacts/2016/'+asimov+'/fit_'+observable+'_2016'+sasimov+'.txt')
+results_2017 = open('impacts/2017/'+asimov+'/fit_'+observable+'_2017'+sasimov+'.txt')
+results_Comb = open('impacts/Comb/'+asimov+'/fit_'+observable+'_Comb'+sasimov+'.txt')
 
 cmunu = 0.001
 
 wilson = []
+bestfit_2016 = []
+bestfit_2017 = []
+bestfit_Comb = []
 uncert_2016 = []
 uncert_2017 = []
 uncert_Comb = []
+uncert_2016_up = []
+uncert_2017_up = []
+uncert_Comb_up = []
+uncert_2016_down = []
+uncert_2017_down = []
+uncert_Comb_down = []
 
 
 for line in results_2016:
@@ -28,8 +42,12 @@ for line in results_2016:
     for word in line.split():
 	#print(word)
 	if (i==0): wilson.append(word)
-	if (i==2): uncert = -float(word)
+	if (i==1): bestfit_2016.append(float(word))
+	if (i==2):
+	    uncert_2016_down.append(float(word)) 
+	    uncert = -float(word)
 	if (i==3): 
+	    uncert_2016_up.append(float(word))
 	    uncert = uncert + float(word)
 	    uncert_2016.append(uncert/2.)
 	i = i+1
@@ -39,8 +57,12 @@ for line in results_2017:
     uncert = 0
     for word in line.split():
         #print(word)
-        if (i==2): uncert = -float(word)
+	if (i==1): bestfit_2017.append(float(word))
+        if (i==2):
+	    uncert_2017_down.append(float(word)) 
+	    uncert = -float(word)
         if (i==3):
+	    uncert_2017_up.append(float(word))
             uncert = uncert + float(word)
             uncert_2017.append(uncert/2.)
         i = i+1
@@ -50,8 +72,12 @@ for line in results_Comb:
     uncert = 0
     for word in line.split():
         #print(word)
-        if (i==2): uncert = -float(word)
+	if (i==1): bestfit_Comb.append(float(word))
+        if (i==2):
+	    uncert_Comb_down.append(float(word)) 
+	    uncert = -float(word)
         if (i==3):
+	    uncert_Comb_up.append(float(word))
             uncert = uncert + float(word)
             uncert_Comb.append(uncert/2.)
         i = i+1
@@ -84,12 +110,18 @@ print '\\hline '
 
 for i in range(16):
     if (i==0 or i==4 or i==8 or i==12): print '\\hline '
-    text = '$'+getwilsontext(wilson[i]) + '$ & $' + str(round(uncert_2016[i], 2)) + '\\times 10^{-3}$ & $' + str(round(uncert_2017[i], 2)) + '\\times 10^{-3}$ & $' + str(round(uncert_Comb[i], 2)) + '\\times 10^{-3}$  \\\\'
+    if (asimov=='asimov'):
+        text = '$'+getwilsontext(wilson[i]) + '$ & $' + str(round(uncert_2016[i], 2)) + '\\times 10^{-3}$ & $' + str(round(uncert_2017[i], 2)) + '\\times 10^{-3}$ & $' + str(round(uncert_Comb[i], 2)) + '\\times 10^{-3}$  \\\\'
+    else:
+        text = '$'+getwilsontext(wilson[i]) + '$ & ' + str(round(bestfit_2016[i], 2)) + ' +' + str(round(uncert_2016_up[i], 2)) + ' ' + str(round(uncert_2016_down[i], 2)) + ' $\\times 10^{-3}$ & ' + str(round(bestfit_2017[i], 2)) + ' +' + str(round(uncert_2017_up[i], 2)) + ' ' + str(round(uncert_2017_down[i], 2))+ ' $\\times 10^{-3}$ & ' + str(round(bestfit_Comb[i], 2)) + ' +' + str(round(uncert_Comb_up[i], 2)) + ' ' + str(round(uncert_Comb_down[i], 2))+ ' $\\times 10^{-3}$  \\\\'
     print text
 
 print '\\hline '
 print '\\end{tabular}'
-print '\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 Asimov datasets (assuming SM pseudo-data).}'
+if asimov=='asimov':
+    print '\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 Asimov datasets (assuming SM pseudo-data).}'
+else:
+    print '\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 data.}'
 print '\\end{center}'
 print '\\end{table}'
 

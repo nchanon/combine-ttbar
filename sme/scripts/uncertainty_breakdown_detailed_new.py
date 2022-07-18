@@ -16,8 +16,8 @@ from ROOT import TGraphAsymmErrors
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
 
-#doPlotsOnly = True
-doPlotsOnly = False
+doPlotsOnly = True
+#doPlotsOnly = False
 
 ###################
 ## Initialisation
@@ -188,9 +188,9 @@ print list_nuisnames
 def asimov_param(w):
     sasimov=''
     wrange=''
-    if w[2:]=='XX' or w[2:]=='XY':
+    if w[-2:]=='XX' or w[-2:]=='XY':
 	wrange='5'
-    if w[2:]=='XZ' or w[2:]=='YZ':
+    if w[-2:]=='XZ' or w[-2:]=='YZ':
 	wrange='15'
     if asimov == 'asimov':
         sasimov += '--setParameters '+w+'=0 -t -1'
@@ -225,24 +225,8 @@ def getwilsontext(wilson):
 npoints=10
 
 if wilson_=='sme_all':
-    wilson_list_all = [
-	'cLXX',
-	'cLXY',
-	'cLXZ',
-	'cLYZ',
-	'cRXX',
-	'cRXY',
-	'cRXZ',
-	'cRYZ',
-	'cXX',
-	'cXY',
-	'cXZ',
-	'cYZ',
-	'dXX',
-	'dXY',
-	'dXZ',
-	'dYZ'
-    ]
+    wilson_list_all = ['cLXX','cLXY','cLXZ','cLYZ','cRXX','cRXY','cRXZ','cRYZ','cXX','cXY','cXZ','cYZ','dXX','dXY','dXZ','dYZ']
+    #wilson_list_all = ['cLXX','cLXY','cLXZ','cLYZ','cRXX','cRXY','cRXZ','cRYZ']
 else:
     wilson_list_all = [wilson_] #for testing
 
@@ -310,8 +294,8 @@ for wilson in wilson_list_all:
         for k in range(len(list_nuisgroups)):
             print cmd4[k]
             os.system(cmd4[k])
-	print cmd5
-	os.system(cmd5)
+        print cmd5
+        os.system(cmd5)
 
 ###################
 ## Getting uncertainties
@@ -345,7 +329,11 @@ rate_stat = []
 
 for wilson in wilson_list_all:
 
-    file = open("./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log")
+    try:
+        file = open("./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log")
+    except:
+        print "Problem with file: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log"
+    print "Opened: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log"
 
     individual_uncert_up = []
     individual_uncert_down = []
@@ -355,13 +343,13 @@ for wilson in wilson_list_all:
     for line in file:
         uncert = 0
         for word in line.split():
-            print(str(i)+' '+word)
+            #print(str(i)+' '+word)
             for k in range(len(wordnum_down)):
                 if i==wordnum_down[k]:
-                    print("Freeze "+list_nuisnames[k]+" down="+str(float(word[:-1])))
+                    #print("Freeze "+list_nuisnames[k]+" down="+str(float(word[:-1])))
                     individual_uncert_down.append(float(word[:-1]))
                 if i==wordnum_up[k]:
-                    print("Freeze "+list_nuisnames[k]+" up="+str(float(word[:-1])))
+                    #print("Freeze "+list_nuisnames[k]+" up="+str(float(word[:-1])))
                     individual_uncert_up.append(float(word[:-1]))
             i = i+1
 
@@ -376,12 +364,16 @@ for wilson in wilson_list_all:
             else:
                 individual_uncert_up[k] = 0
 
+    #print str(len(individual_uncert_down))+' '+ str(len(individual_uncert_up))
+
     for k in range(len(individual_uncert_up)):
         if k!=0 and k!=len(individual_uncert_up)-1:
 	    individual_uncert_down[k]=-individual_uncert_down[k]
             #individual_uncert_avg.append((individual_uncert_up[k]+individual_uncert_down[k])/2.)
         #else:
         individual_uncert_avg.append((individual_uncert_up[k]-individual_uncert_down[k])/2.)
+
+    print str(len(individual_uncert_down))+' '+ str(len(individual_uncert_up))+' '+str(len(individual_uncert_avg))
 
     individual_uncert_down_allbins.append(individual_uncert_down)
     individual_uncert_up_allbins.append(individual_uncert_up)
@@ -393,6 +385,9 @@ print 'individual_uncert_down_allbins', individual_uncert_down_allbins
 print 'individual_uncert_up_allbins', individual_uncert_up_allbins
 print 'individual_uncert_avg_allbins', individual_uncert_avg_allbins
 
+print str(len(individual_uncert_down_allbins))+' '+str(len(individual_uncert_up_allbins))
+for j in range(len(individual_uncert_down_allbins)):
+    print str(len(individual_uncert_down_allbins[j]))+' '+str(len(individual_uncert_up_allbins[j]))
 
 ###################
 ## Plotting
@@ -412,18 +407,23 @@ h_uncert = []
 h_uncertUp = []
 h_uncertDown = []
 
-uncert_bin = []
-uncert_binUp = []
-uncert_binDown = []
+#uncert_bin = []
+#uncert_binUp = []
+#uncert_binDown = []
 
 for k in range(len(list_nuisnames)):
+    print str(k)
     h = TH1F(list_nuisnames[k], list_nuisnames[k], 16, 0, 16)
     hUp = TH1F(list_nuisnames[k]+'Up', list_nuisnames[k]+'Up', 16, 0, 16)
     hDown = TH1F(list_nuisnames[k]+'Down', list_nuisnames[k]+'Down', 16, 0, 16)
+    uncert_bin = []
+    uncert_binUp = []
+    uncert_binDown = []
     for j in range(len(wilson_list_all)):
 	uncert_bin = individual_uncert_avg_allbins[j]
         uncert_binUp = individual_uncert_up_allbins[j]
         uncert_binDown = individual_uncert_down_allbins[j]
+	print str(len(uncert_bin))+' '+str(len(uncert_binUp))+' '+str(len(uncert_binDown))
         h.Fill(j+0.5, uncert_bin[k])
         hUp.Fill(j+0.5, uncert_binUp[k])
         hDown.Fill(j+0.5, uncert_binDown[k])
@@ -460,7 +460,7 @@ for k in range(len(list_nuisnames)):
             h_uncertUp[k].SetMaximum(plotYmax)
             h_uncertUp[k].SetYTitle("Uncertainty on Wilson coefficient")
             #h_uncertUp[k].SetXTitle("Wilson")
-	    h_uncertUp[k].GetXaxis().LabelsOption("v")
+	    #h_uncertUp[k].GetXaxis().LabelsOption("v")
 	    h_uncertUp[k].GetXaxis().SetLabelSize(0.04)
 	    for j in range(len(wilson_list_all)):
 	        h_uncertUp[k].GetXaxis().SetBinLabel(1+j,getwilsontext(wilson_list_all[j]))
@@ -481,7 +481,7 @@ legend.Draw("SAME")
 
 resultname = './impacts/'+year+'/'+observable+'_smefit_'+nuisancegroup+'_'+year
 
-if len(wilson_list_all)==16:
+if len(wilson_list_all)>=8:
     canvas.SaveAs(resultname+'.pdf')
 
 

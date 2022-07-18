@@ -22,6 +22,7 @@ os.system('cp inputs/2016/combine_'+observable+'_24bins_2016_card.txt .')
 os.system('cp inputs/2017/combine_'+observable+'_24bins_2017_card.txt .')
 
 cmd = 'combineCards.py combine_'+observable+'_24bins_2016_card.txt combine_'+observable+'_24bins_2017_card.txt > inputs/Comb/combine_'+observable+'_24bins_Comb_card.txt'
+print cmd
 os.system(cmd)
 
 #file = open('inputs/Comb/combine_'+observable+'_24bins_Comb_card.txt','a')

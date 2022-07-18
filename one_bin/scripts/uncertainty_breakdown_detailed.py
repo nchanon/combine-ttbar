@@ -68,8 +68,8 @@ if nuisancegroup=='exp_breakdown':
     NuisanceGroup = "exp_elec_muon_pu_btag_jec_trigger_prefiring"
 if nuisancegroup=='theory_breakdown':
     NuisanceGroup = "theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco"
-if nuisancegroup=='trig_breakdown':
-    NuisanceGroup = "trigger"
+if nuisancegroup=='putrig_breakdown':
+    NuisanceGroup = "pu_trigger"
 
 
 ###################
@@ -108,7 +108,9 @@ nuis_exp_pu = 'rgx{syst_pu.*}'
 nuis_exp_btag = 'rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*}'
 nuis_exp_jec = 'rgx{.*jec.*}'
 nuis_exp_prefiring = 'rgx{syst_prefiring.*}'
-nuis_exp_trigger = 'rgx{emu_trig_.*}'
+nuis_exp_trigger = 'rgx{.*trig.*}'
+#nuis_exp_trigger = 'rgx{emu_trig_.*}'
+#nuis_exp_trigger  = 'rgx{syst_em_trig.*}'
 
 nuis_mcstat = 'autoMCStats'
 
@@ -171,9 +173,15 @@ if NuisanceGroup=="theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco":
     list_nuisnames.append('ue_tune')
     list_nuisnames.append('color_reco')
 
-if NuisanceGroup=="trigger":
+if NuisanceGroup=="pu_trigger":
+    list_nuisgroups.append(nuis_exp_pu)
     list_nuisgroups.append(nuis_exp_trigger)
-    list_nuisnames.append('trigger')
+    list_nuisnames.append('pu_flat')
+    #list_nuisnames.append('pu_time')
+    list_nuisnames.append('trig_full')
+    #list_nuisnames.append('trig_noNvtx')
+    #list_nuisnames.append('trig_flat')
+
 
 
 #if NuisanceGroup=="lumi_bkgdnorm_theory_exp":
