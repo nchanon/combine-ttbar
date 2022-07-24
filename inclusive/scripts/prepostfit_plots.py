@@ -26,12 +26,23 @@ parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
 parser.add_argument('title', help='display your observable title')
+parser.add_argument('timebin', help='display the time bin')
 
 args = parser.parse_args()
 observable = args.observable
 year = args.year
 asimov = args.asimov
 title = args.title
+timebin = int(args.timebin)
+stimebin="";
+if (timebin==-1):
+     stimebin = "_puold";
+if (timebin==-2):
+     stimebin = "_punew";
+if (timebin==-3):
+     stimebin = "_puinc";
+if (timebin>=0):
+     stimebin = "_put"+str(timebin);    
 
 
 asi = ''
@@ -52,8 +63,8 @@ else:
 #    else:
 #        return ''
 
-#doPrePostFitOnly = True
-doPrePostFitOnly = False
+doPrePostFitOnly = True
+#doPrePostFitOnly = False
 
 
 fitkind = 'prefit'
@@ -100,20 +111,23 @@ print '-------------------------'
 #        os.system('mv '+observable+'_inclusive_impacts_'+year+'* impacts/'+year+'/')
 #        os.system('mv *Impact_'+year+'*.root  impacts/'+year+'/')
 
-if (doPrePostFitOnly==False):
+if (doPrePostFitOnly==True):
     if (fitkind=='prefit'):
-	finput = 'inputs/'+observable+'_inclusive_workspace_'+year+'.root'
+	finput = 'inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root'
     else:
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+asimov+' --robustFit 1 '
-        cmd2 += ' -d inputs/'+observable+'_inclusive_workspace_'+year+'.root '
+        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+stimebin+'_'+asimov+' --robustFit 1 '
+        cmd2 += ' -d inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root '
         cmd2 += asi #asimov_param(asimov)
         cmd2 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
         cmd2 += ' --saveWorkspace'
+	os.system('echo '+cmd2)
 	os.system(cmd2)
-	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
+	finput = "higgsCombine.snapshot_"+year+stimebin+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 --rMin 0 --rMax 10 --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
     cmd5 += ' --skipBOnlyFit --plots'
+    os.system('echo using the root file :inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root ' )
+    os.system('echo '+cmd5)
     os.system(cmd5)
 
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
@@ -148,7 +162,7 @@ palette.SetX2NDC(0.94)
 palette.SetY1NDC(0.2)
 palette.SetY2NDC(0.9)
 hCov.Draw("COLZ")
-canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+stimebin+".pdf")
 
 ###################
 ## Pre-fit plot
@@ -375,7 +389,7 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBandRatio.GetXaxis().SetTitleSize(0.17)
 	UncertaintyBandRatio.GetXaxis().SetLabelOffset(0.01)
 
-	resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+sfitkind
+	resultname = './impacts/'+year+'/'+observable+'_'+year+stimebin+'_'+sfitkind
 	canvas.SaveAs(resultname+'.pdf')
 
 displayPrePostFitPlot("prefit")

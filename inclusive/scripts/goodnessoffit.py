@@ -26,13 +26,23 @@ parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 #parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
 #parser.add_argument('title', help='display your observable title')
+parser.add_argument('timebin', help='display the time bin')
 
 args = parser.parse_args()
 observable = args.observable
 year = args.year
 #asimov = args.asimov
 #title = args.title
-
+timebin = int(args.timebin)
+stimebin="";
+if (timebin==-1):
+     stimebin = "_puold";
+if (timebin==-2):
+     stimebin = "_punew";
+if (timebin==-3):
+     stimebin = "_puinc";
+if (timebin>=0):
+     stimebin = "_put"+str(timebin);    
 
 #asi = ''
 #sasimov=''
@@ -53,8 +63,8 @@ year = args.year
 #        return ''
 
 
-doFit = False
-#doFit = True
+#doFit = False
+doFit = True
 
 rbin='r'
 r_range='0.8,1.2'
@@ -71,23 +81,23 @@ print ' >>> combine on datacard '
 print '-------------------------'
 
 #Data fit
-cmd1 = 'combine -M GoodnessOfFit inputs/'+observable+'_inclusive_workspace_'+year+'.root --algo=saturated -n .data_'+observable+'_'+year
+cmd1 = 'combine -M GoodnessOfFit inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root --algo=saturated -n .data_'+observable+'_'+year+stimebin
 
 #MC toys
 ntoys=500
-cmd2 = 'combine -M GoodnessOfFit inputs/'+observable+'_inclusive_workspace_'+year+'.root --algo=saturated --toysFreq -t '+str(ntoys)+' -n .mctoys_'+observable+'_'+year
+cmd2 = 'combine -M GoodnessOfFit inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root --algo=saturated --toysFreq -t '+str(ntoys)+' -n .mctoys_'+observable+'_'+year+stimebin
    
 if doFit:
     os.system(cmd1)
     os.system(cmd2)
 
-fData = TFile('higgsCombine.data_'+observable+'_'+year+'.GoodnessOfFit.mH120.root')
+fData = TFile('higgsCombine.data_'+observable+'_'+year+stimebin+'.GoodnessOfFit.mH120.root')
 tData = fData.Get('limit')
 tData.GetEvent(0)
 val_data = tData.GetLeaf('limit').GetValue()
 print str(val_data)
 
-fMC = TFile('higgsCombine.mctoys_'+observable+'_'+year+'.GoodnessOfFit.mH120.123456.root')
+fMC = TFile('higgsCombine.mctoys_'+observable+'_'+year+stimebin+'.GoodnessOfFit.mH120.123456.root')
 tMC = fMC.Get('limit')
 val_MC_max=0
 val_MC = []
@@ -136,7 +146,7 @@ elif (year=='Comb'):
     tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=True)
 
 
-Canvas.SaveAs('impacts/'+year+'/goodnessOfFit_'+observable+'_'+year+'.pdf')
+Canvas.SaveAs('impacts/'+year+'/goodnessOfFit_'+observable+'_'+year+stimebin+'.pdf')
 
 raw_input()
 exit()

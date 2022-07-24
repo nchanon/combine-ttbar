@@ -8,23 +8,35 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
+parser.add_argument('timebin', help='display the time bin')
 #parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
+
 
 args = parser.parse_args()
 observable = args.observable
 year = args.year
+timebin = int(args.timebin)
 #asimov = args.asimov
 
 
 print '-------------------------'
 print ' >>> workspace creation '
 print '-------------------------'
-    
+
+stimebin="";
+if (timebin==-1):
+     stimebin = "_puold";
+if (timebin==-2):
+     stimebin = "_punew";
+if (timebin==-3):
+     stimebin = "_puinc";
+if (timebin>=0):
+     stimebin = "_put"+str(timebin);    
 cmd  = ' text2workspace.py '
-cmd += ' inputs/'+year+'/'+observable+'_datacard.txt '
+cmd += ' inputs/'+year+'/'+observable+'_datacard'+stimebin+'.txt '
 #cmd += ' -P HiggsAnalysis.CombinedLimit.TimePhysicsModel:timeModel '
 #cmd += ' --PO '+wilson
-cmd += ' -o ./inputs/'+observable+'_inclusive_workspace_'+year+'.root'
+cmd += ' -o ./inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root'
 
 
 #cmd = 'text2workspace.py ./inputs/'+year+'/'+observable+'_datacard.txt '
