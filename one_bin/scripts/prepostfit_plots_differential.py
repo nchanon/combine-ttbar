@@ -66,8 +66,8 @@ else:
 #    else:
 #        return ''
 
-doPrePostFitOnly = True
-#doPrePostFitOnly = False
+#doPrePostFitOnly = True
+doPrePostFitOnly = False
 
 
 fitkind = 'prefit'
@@ -129,6 +129,7 @@ if (doPrePostFitOnly==False):
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+' --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
     cmd5 += '-n .prefit_'+observable+'_'+year+'_'+asimov
+    print cmd5
     #cmd5 += ' --skipBOnlyFit --plots'
     os.system(cmd5)
 

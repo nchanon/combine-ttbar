@@ -93,6 +93,7 @@ if (doPrePostFitOnly==False):
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+' --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
     cmd5 += '-n .prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
     #cmd5 += ' --skipBOnlyFit --plots'
+    print cmd5
     os.system(cmd5)
 
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
@@ -159,7 +160,7 @@ else:
     syst_list_new = syst_list
     syst_uncert_new = syst_uncert
 
-    print str(len(syst_list_new))+ ' ' +srt(len(syst_uncert_new))
+    print str(len(syst_list_new))+ ' ' +str(len(syst_uncert_new))
 
 hist_nuis = TH1F("hist_nuis","hist_nuis",len(syst_list_new),0,len(syst_list_new))
 hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new),0,len(syst_list_new))

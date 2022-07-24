@@ -16,8 +16,8 @@ from ROOT import TGraphAsymmErrors
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
 
-doPlotsOnly = True
-#doPlotsOnly = False
+#doPlotsOnly = True
+doPlotsOnly = False
 
 ###################
 ## Initialisation

@@ -43,7 +43,8 @@ class TimeModel(PhysicsModel):
     def getYieldScale(self,bin,process):
 	for c in self.process:
             if process == c: 
-                return "sme_func"
+                return ("sme_func"+c)
+		found = True
 
 	if process == "signal":
             return "bkd_func"
@@ -56,11 +57,13 @@ class TimeModel(PhysicsModel):
             if not self.modelBuilder.out.var(c):
                 self.modelBuilder.doVar(c+"[0.0,-5.,5.]")
         
-            self.modelBuilder.factory_("expr::sme_func(\"@0\", "+c+")")
-            #self.modelBuilder.factory_( "expr::sig_func(\"@0-sqrt(@0)\", "+self.wilson+")")
-            self.modelBuilder.factory_( "expr::bkd_func(\"1-@0\", "+c+")")
+            self.modelBuilder.factory_("expr::sme_func"+c+"(\"@0\", "+c+")")
+            #self.modelBuilder.factory_( "expr::bkd_func"+c+"(\"1-@0\", "+c+")")
         
         
             self.modelBuilder.doSet("POI",c)
-        
+
+        if len(self.wilson)==4:
+            self.modelBuilder.factory_( "expr::bkd_func(\"1-@0-@1-@2-@3\", "+self.wilson[0]+","+self.wilson[1]+","+self.wilson[2]+","+self.wilson[3]+")")
+ 
 timeModel = TimeModel()

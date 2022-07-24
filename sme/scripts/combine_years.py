@@ -42,6 +42,7 @@ for wilson in wilson_list_all:
     os.system('cp inputs/2017/'+observable+'_'+wilson+'_datacard.txt ./'+observable+'_'+wilson+'_datacard_2017.txt')
 
     cmd = 'combineCards.py '+observable+'_'+wilson+'_datacard_2016.txt '+observable+'_'+wilson+'_datacard_2017.txt > inputs/Comb/'+observable+'_'+wilson+'_datacard.txt'
+    print cmd
     os.system(cmd)
 
     #file = open('inputs/Comb/'+observable+'_'+wilson+'_datacard.txt','a')

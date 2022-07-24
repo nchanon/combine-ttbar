@@ -19,4 +19,5 @@ cmd += ' -P HiggsAnalysis.CombinedLimit.TimePhysicsModel:timeModel '
 cmd += ' --PO '+wilson
 cmd += ' -o ./inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root'
 
+print cmd
 os.system(cmd)
