@@ -63,10 +63,14 @@ if (doPrePostFitOnly==False):
     cmd3 += '-o '+observable+'_inclusive_impacts_'+year+stimebin+sasimov+'.json '
 
     cmd4 = 'plotImpacts.py -i '+observable+'_inclusive_impacts_'+year+stimebin+sasimov+'.json -o '+observable+'_inclusive_impacts_'+year+stimebin+sasimov
-        
+
+    print cmd1        
     os.system(cmd1)
+    print cmd2
     os.system(cmd2)
+    print cmd3
     os.system(cmd3)
+    print cmd4
     os.system(cmd4)
 
     if asimov == 'asimov':

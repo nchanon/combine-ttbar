@@ -65,9 +65,12 @@ if doFit:
     cmd = 'combine -M MultiDimFit '
     cmd += asi
     cmd += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace.root'
-    #cmd += ' --robustFit 1'
-    cmd += ' --cminDefaultMinimizerStrategy 0'
-    cmd += ' --algo=singles > log'+year
+    #ucmd += ' --robustFit 1'
+    #cmd += ' --cminDefaultMinimizerStrategy 0'
+    cmd += ' --algo=cross'
+    #cmd += ' --algo=singles'
+    cmd += ' -n differential_'+observable+'_'+year+'_'+asimov
+    cmd += ' > log_differential_'+observable+'_'+year+'_'+asimov
 
     print cmd
     os.system(cmd)
@@ -85,7 +88,7 @@ ttbar_unc_down = []
 ttbar_unc_up = []
 
 i=0
-file = open('log'+year)
+file = open('log_differential_'+observable+'_'+year+'_'+asimov)
 for line in file:
     if TString(line).Contains('68%'):
         #print line

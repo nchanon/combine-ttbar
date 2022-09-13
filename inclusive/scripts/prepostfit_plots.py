@@ -126,7 +126,7 @@ if (doPrePostFitOnly==True):
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 --rMin 0 --rMax 10 --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
     cmd5 += ' --skipBOnlyFit --plots'
-    os.system('echo using the root file :inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root ' )
+    os.system('echo using the root file : inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root ' )
     os.system('echo '+cmd5)
     os.system(cmd5)
 

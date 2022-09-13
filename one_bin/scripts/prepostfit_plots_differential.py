@@ -3,7 +3,7 @@ import argparse
 
 sys.path.append('./')
 
-from ROOT import TFile, TH1, TH2, TCanvas, TH1F, THStack, TString
+from ROOT import TFile, TH1, TH2, TCanvas, TH1F, TH2F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
 from ROOT import TGraphAsymmErrors
 from ROOT import TStyle, gStyle, TColor, TLatex
@@ -66,8 +66,8 @@ else:
 #    else:
 #        return ''
 
-#doPrePostFitOnly = True
-doPrePostFitOnly = False
+doPrePostFitOnly = True
+#doPrePostFitOnly = False
 
 
 fitkind = 'prefit'
@@ -128,7 +128,8 @@ if (doPrePostFitOnly==False):
 	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+' --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
-    cmd5 += '-n .prefit_'+observable+'_'+year+'_'+asimov
+    cmd5 += ' --plots'
+    cmd5 += ' -n .prefit_'+observable+'_'+year+'_'+asimov
     print cmd5
     #cmd5 += ' --skipBOnlyFit --plots'
     os.system(cmd5)
@@ -156,6 +157,7 @@ cmd6 += poi
 #    cmd6 += pois[i]
 #    if (i!=23): 
 #        cmd6 += ','
+cmd6 += ' --skipFitB'
 cmd6 += ' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log'
 print cmd6
 os.system(cmd6)
@@ -172,19 +174,20 @@ for line in file:
     isHighlightedFirst = False
     isHighlightedSecond = False
     for word in line.split():
-        print(str(iline)+' j='+str(j)+' '+word)
-        if iline>2 and j==0:
-            syst_list.append(word)
-        if iline>2 and j==1 and word=='!':
-            isHighlightedFirst = True
-        if iline>2 and j==3 and word=='!':
-            isHighlightedSecond = True
-        if iline>2 and j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
-            syst_uncert.append(float(word))
-        if iline>2 and j==5 and isHighlightedSecond==True:
-            syst_uncert.append(float(word[:-1]))
-        if iline>2 and j==6 and isHighlightedFirst==True:
-            syst_uncert.append(float(word[:-1]))
+        #print(str(iline)+' j='+str(j)+' '+word)
+	if iline>3:
+	    if iline>2 and j==0:
+		syst_list.append(word)
+	    if iline>2 and j==1 and word=='!':
+		isHighlightedFirst = True
+	    if iline>2 and j==3 and word=='!':
+		isHighlightedSecond = True
+	    if iline>2 and j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
+		syst_uncert.append(float(word))
+	    if iline>2 and j==5 and isHighlightedSecond==True:
+		syst_uncert.append(float(word[:-1]))
+	    if iline>2 and j==6 and isHighlightedFirst==True:
+		syst_uncert.append(float(word[:-1]))
 
         j += 1
     iline += 1
@@ -248,8 +251,8 @@ latex.DrawLatex(0.25,0.9,year+' '+poi+'  '+asimov)
 
 
 canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.pdf')
-raw_input()
-sys.exit()
+#raw_input()
+#sys.exit()
 
 
 ###################
@@ -260,6 +263,8 @@ sys.exit()
 gStyle.SetPalette(55)
 gStyle.SetOptStat(0)
 
+hCov = fDiagnostics.Get("covariance_fit_s")
+
 canvas = TCanvas('CorrelationMatrix','CorrelationMatrix',1000,800)
 pad = TPad("pad","pad",0,0,1,1)
 pad.SetLeftMargin(0.16)
@@ -267,21 +272,36 @@ pad.SetBottomMargin(0.2)
 pad.SetRightMargin(0.1)
 pad.Draw()
 pad.cd()
-hCov = fDiagnostics.Get("covariance_fit_s")
-hCov.GetXaxis().LabelsOption("v")
-hCov.GetXaxis().SetLabelSize(0.025)
-hCov.GetYaxis().SetLabelSize(0.025)
-hCov.GetZaxis().SetLabelSize(0.025)
-hCov.SetTitle("Systematics correlation matrix, "+year)
+
+hCovPOI = TH2F("covariance_fit_s_POI","covariance_fit_s_POI",24,0,24,24,0,24)
+for i in range(24):
+    hCovPOI.GetXaxis().SetBinLabel(1+i, "r_"+str(i))
+    hCovPOI.GetYaxis().SetBinLabel(1+i, "r_"+str(i))
+
+for i in range(24):
+    for j in range(24):
+	corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin("r_"+str(i)), hCov.GetYaxis().FindBin("r_"+str(j)))
+	hCovPOI.SetBinContent(i+1,j+1,corrval)
+	
+hCovPOI.GetXaxis().LabelsOption("v")
+hCovPOI.GetXaxis().SetLabelSize(0.025)
+hCovPOI.GetYaxis().SetLabelSize(0.025)
+hCovPOI.GetZaxis().SetLabelSize(0.025)
+#hCov.SetTitle("Systematics correlation matrix, "+year)
+hCovPOI.SetTitle("Signal strengths correlation matrix, "+year)
+
 palette = hCov.GetListOfFunctions().FindObject("palette")
 palette.SetX1NDC(0.92)
 palette.SetX2NDC(0.94)
 palette.SetY1NDC(0.2)
 palette.SetY2NDC(0.9)
-hCov.Draw("COLZ")
-canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+hCovPOI.Draw("COLZ")
+#canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+canvas.Print("impacts/CorrelationMatrixSignalStrength_"+observable+"_"+year+".pdf")
 
-#exit()
+raw_input()
+sys.exit()
+
 
 ###################
 ## Pre-fit plot

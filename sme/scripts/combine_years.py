@@ -12,11 +12,6 @@ observable = args.observable
 #wilson = args.wilson
 #asimov = args.asimov
 
-#def asimov_param(w):
-#    if asimov == 'asimov':
-#        return ['--setParameters',w+'=0','-t','-1']
-#    return []
-
 wilson_list_all = [
     'cLXX',
     'cLXY',
@@ -36,7 +31,14 @@ wilson_list_all = [
     'dYZ'
 ]
 
+wilson_list_multiple = [
+    'cLXX,cLXY,cLXZ,cLYZ',
+    'cRXX,cRXY,cRXZ,cRYZ',
+    'cXX,cXY,cXZ,cYZ',
+    'dXX,dXY,dXZ,dYZ'
+]
 
+#Single fits
 for wilson in wilson_list_all:
     os.system('cp inputs/2016/'+observable+'_'+wilson+'_datacard.txt ./'+observable+'_'+wilson+'_datacard_2016.txt')
     os.system('cp inputs/2017/'+observable+'_'+wilson+'_datacard.txt ./'+observable+'_'+wilson+'_datacard_2017.txt')
@@ -45,14 +47,23 @@ for wilson in wilson_list_all:
     print cmd
     os.system(cmd)
 
-    #file = open('inputs/Comb/'+observable+'_'+wilson+'_datacard.txt','a')
-    #file.write('timedep group = lumi_stability_2016 lumi_linearity_2016 emu_trig_2016 lumi_stability_2017 lumi_linearity_2017 emu_trig_2017\n')
-    #file.write('timeindep group = rttx rsingletop rdibosons rvjets syst_elec_reco syst_elec_id syst_muon_id syst_muon_iso syst_pu syst_b syst_pt_top syst_prefiring lumi_flat_uncor_2016 lumi_flat_uncor_2017 lumi_flat_cor CP5 hdamp erdOn QCDinspired GluonMove mtop jec')
-    #file.close()
-
     os.system('rm '+observable+'_'+wilson+'_datacard_2016.txt')
     os.system('rm '+observable+'_'+wilson+'_datacard_2017.txt')
 
     os.system('python scripts/workspace_creator.py '+observable+' Comb '+wilson)
 
-#os.system('python scripts/fit_alone.py '+observable+' Comb '+wilson+' '+asimov)
+#Multiple fits
+os.system('cp inputs/2016/'+observable+'_sme_all_datacard.txt ./'+observable+'_sme_all_datacard_2016.txt')
+os.system('cp inputs/2017/'+observable+'_sme_all_datacard.txt ./'+observable+'_sme_all_datacard_2017.txt')
+
+cmd = 'combineCards.py '+observable+'_sme_all_datacard_2016.txt '+observable+'_sme_all_datacard_2017.txt > inputs/Comb/'+observable+'_sme_all_datacard.txt'
+print cmd
+os.system(cmd)
+
+os.system('rm '+observable+'_sme_all_datacard_2016.txt')
+os.system('rm '+observable+'_sme_all_datacard_2017.txt')
+
+for wilson in wilson_list_multiple:
+    os.system('python scripts/workspace_creator.py '+observable+' Comb '+wilson)    
+
+

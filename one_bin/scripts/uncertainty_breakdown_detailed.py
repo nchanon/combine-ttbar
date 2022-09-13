@@ -495,7 +495,7 @@ for k in range(len(list_nuisnames)):
 	if k==0:
 	    h_uncertUp[k].SetMinimum(plotYmin)
             h_uncertUp[k].SetMaximum(plotYmax)
-            h_uncertUp[k].SetYTitle("Uncertainty (%)")
+            h_uncertUp[k].SetYTitle("Uncertainty")
             h_uncertUp[k].SetXTitle("sidereal time (h)");
             h_uncertUp[k].GetYaxis().SetTitleOffset(1.1)
 	    h_uncertUp[k].Draw("HIST")

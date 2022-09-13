@@ -23,6 +23,7 @@ os.system('cp inputs/2016/'+observable+'_datacard'+stimebin+'.txt ./'+observable
 os.system('cp inputs/2017/'+observable+'_datacard'+stimebin+'.txt ./'+observable+'_datacard_2017'+stimebin+'.txt')
 
 cmd = 'combineCards.py '+observable+'_datacard_2016'+stimebin+'.txt '+observable+'_datacard_2017'+stimebin+'.txt > inputs/Comb/'+observable+'_datacard'+stimebin+'.txt'
+print cmd
 os.system(cmd)
 
 #file = open('inputs/Comb/'+observable+'_datacard.txt','a')

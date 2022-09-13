@@ -1,7 +1,7 @@
-#python scripts/impacts.py ${1} 2016 asimov
-python scripts/impacts.py ${1} 2017 asimov
-python scripts/impacts.py ${1} Comb asimov
-#python scripts/impacts.py ${1} 2016 data
-python scripts/impacts.py ${1} 2017 data
-python scripts/impacts.py ${1} Comb data
+python scripts/impacts.py ${1} 2016 asimov -2
+python scripts/impacts.py ${1} 2017 asimov -2
+python scripts/impacts.py ${1} Comb asimov -2
+python scripts/impacts.py ${1} 2016 data -2
+python scripts/impacts.py ${1} 2017 data -2
+python scripts/impacts.py ${1} Comb data -2
 

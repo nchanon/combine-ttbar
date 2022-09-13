@@ -38,7 +38,7 @@ cmd += ' inputs/'+year+'/'+observable+'_datacard'+stimebin+'.txt '
 #cmd += ' --PO '+wilson
 cmd += ' -o ./inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root'
 
-
+print cmd
 #cmd = 'text2workspace.py ./inputs/'+year+'/'+observable+'_datacard.txt '
 #cmd += '-o '+observable+'_impacts.root'
 os.system(cmd)

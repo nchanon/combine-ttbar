@@ -127,9 +127,9 @@ for asimov in list_asimov:
 	cmd5 += " -o impacts/"+year+"/UncertaintyBreakdown_"+observable+"_"+year+stimebin+"_"+asimov+"_"+rbin
         cmd5 += " > impacts/"+year+"/uncertainty_breakdown_"+observable+"_"+year+stimebin+'_'+asimov+'_'+rbin+".log"
 
-        cmd6 = 'cp freeze_all_'+year+stimebin+'_'+asimov+'.pdf impacts/'+year+'/'
+        #cmd6 = 'cp freeze_all_'+year+stimebin+'_'+asimov+'.pdf impacts/'+year+'/'
         #if (asimov == 'asimov'): cmd6 += asimov+'/'
-        cmd6 += 'UncertaintyBreakdown_'+observable+"_"+year+stimebin+'_'+asimov+'_'+rbin+'.pdf'
+        #cmd6 += 'UncertaintyBreakdown_'+observable+"_"+year+stimebin+'_'+asimov+'_'+rbin+'.pdf'
 
         if (doPlotsOnly==False):
             print cmd1

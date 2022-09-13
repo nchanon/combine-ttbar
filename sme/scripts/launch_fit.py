@@ -17,31 +17,6 @@ def asimov_param(w):
         return ['--setParameters',w+'=0','-t','-1']
     return []
 
-wilson_list_XX = [
-    'cLXX',
-    'cRXX',
-    'cXX',
-    'dXX'
-]
-wilson_list_XY = [
-    'cLXY',
-    'cRXY',
-    'cXY',
-    'dXY'
-]
-wilson_list_XZ = [
-    'cLXZ',
-    'cRXZ',
-    'cXZ',
-    'dXZ'
-]
-wilson_list_YZ = [
-    'cLYZ',
-    'cRYZ',
-    'cYZ',
-    'dYZ'
-]
-
 wilson_list_all = [
     'cLXX',
     'cLXY',
@@ -61,21 +36,7 @@ wilson_list_all = [
     'dYZ'
 ]
 
-wilson = raw_input('choose wilson benshmark (XX, XY, XZ, YZ, all) : ')
-if wilson == 'XX':
-    wilson_list = wilson_list_XX
-elif wilson == 'XY':
-    wilson_list = wilson_list_XY
-elif wilson == 'XZ':
-    wilson_list = wilson_list_XZ
-elif wilson == 'YZ':
-    wilson_list = wilson_list_YZ
-elif wilson == 'all':
-    wilson_list = wilson_list_all
-else:
-    print 'wrong benchmark !'
-    exit()
-    
+wilson_list = wilson_list_all    
 
 
 if asimov == 'asimov':
@@ -111,9 +72,11 @@ for i in range(len(cmd_input)):
     cmd = ['combine', 
            '-M', 
            'MultiDimFit',
-           '--algo=singles', 
-           '--robustFit',
-           '1',
+           '--algo=singles',
+	   ' --cminDefaultMinimizerStrategy',
+	   '0', 
+           #'--robustFit',
+           #'1',
            cmd_input[i]]
     for a in asimov_param(wilson_list[i]):
         cmd.append(a)
