@@ -105,7 +105,8 @@ for l in fit_values:
 outname = './impacts/'+year+'/'+asimov+'/fit_'+observable+'_'+year
 if asimov == 'asimov':
     outname += '_'+asimov
-
+else:
+    outname += '_data'
 file = open(outname+'.txt','w') 
 file.write(text) 
 file.close()

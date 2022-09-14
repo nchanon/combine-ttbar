@@ -93,6 +93,9 @@ npoints=20
 ## Core
 ###################
 
+optim = ' --cminDefaultMinimizerStrategy 0'
+#optim = ' --robustFit 1 '
+
 list_asimov = ['asimov','data']
 list_years = ['2016','2017','Comb']
 #list_years = ['2016']
@@ -100,13 +103,13 @@ list_years = ['2016','2017','Comb']
 for asimov in list_asimov:
     for year in list_years:
 
-        cmd1 = 'combine -M MultiDimFit -n .nominal_'+year+stimebin+'_'+asimov+' --robustFit 1 '
+        cmd1 = 'combine -M MultiDimFit -n .nominal_'+year+stimebin+'_'+asimov+optim
         cmd1 += ' -d inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root '
         cmd1 += asimov_param(asimov)
         cmd1 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
         cmd1 += ' --algo grid --points '+str(npoints)+' '
 
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+stimebin+'_'+asimov+' --robustFit 1 '
+        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+stimebin+'_'+asimov+optim
         cmd2 += ' -d inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root '
         cmd2 += asimov_param(asimov)
         cmd2 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
@@ -184,6 +187,7 @@ for asimov in list_asimov:
 print rate_total
 print rate_stat
 
+print 'Write '+'impacts/'+year+'/Latex_UncertaintyBreakdown_'+observable+stimebin+'.txt'
 sys.stdout = open('impacts/'+year+'/Latex_UncertaintyBreakdown_'+observable+stimebin+'.txt', 'w')
 
 i = 0
