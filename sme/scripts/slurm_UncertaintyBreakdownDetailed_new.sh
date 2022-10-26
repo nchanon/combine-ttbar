@@ -12,7 +12,7 @@
 #  srun -n1 --exclusive ./runLHEtoNanoGEN.sh PROC_SM_ttbar_emu_13TeV_LHE_${i} &
 #done
 
-srun -n1 --exclusive python scripts/uncertainty_breakdown_detailed_new.py n_bjets ${1} ${2}_breakdown ${3} asimov  &
+srun -n1 --exclusive python scripts/uncertainty_breakdown_detailed_new.py n_bjets ${1} ${2}_breakdown ${3} ${4}  &
 #uncertainty_breakdown_detailed.py n_bjets ${1} theory_breakdown asimov ${1} &
 
 wait

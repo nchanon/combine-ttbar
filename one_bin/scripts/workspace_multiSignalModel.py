@@ -18,6 +18,9 @@ year = args.year
 ## function
 ################################################################################
 
+range_min = 0
+range_max = 2
+
 def r_range(value, min, max):
     return '['+str(value)+','+str(min)+','+str(max)+']'
 
@@ -30,10 +33,14 @@ outwork = 'combine_'+observable+'_'+str(n)+'bins_'+year+'_workspace.root'
 
 
 cmd = 'text2workspace.py -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel '
-cmd += '--PO verbose '
+#cmd += '--X-exclude-nuisance=syst_b_correlated.* --X-exclude-nuisance=syst_l_correlated.* '
+#cmd += '--no-b-only '
+#cmd += '--PO verbose '
+cmd += '--optimize-simpdf-constraints=cms '
 for i in range(n):
-    if (year!='Comb'): cmd += "--PO 'map=ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' "
-    else: cmd += "--PO 'map=ch1_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' " +"--PO 'map=ch2_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' " 
+    if (year!='Comb'): cmd += "--PO 'map=ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,range_min,range_max)+"' "
+    #else: cmd += "--PO 'map=ch1_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,range_min,range_max)+"' " +"--PO 'map=ch2_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,range_min,range_max)+"' " 
+    else: cmd += "--PO 'map=ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,range_min,range_max)+"' " +"--PO 'map=ch"+str(n+i+1)+'/signal:r_'+str(i)+r_range(1,range_min,range_max)+"' " 
     #else: cmd += "--PO 'map=ch*_ch"+str(i+1)+'/signal:r_'+str(i)+r_range(1,0,10)+"' "
 cmd += inpath + outcard
 cmd += ' -o '+outpath + outwork

@@ -22,10 +22,15 @@ if multiple=='multiple':
 else:
     smultiple = ''
 
+if asimov=='asimov':
+    results_2016 = open('impacts/2016/'+asimov+'/fit_'+smultiple+observable+'_2016'+sasimov+'.txt')
+    results_2017 = open('impacts/2017/'+asimov+'/fit_'+smultiple+observable+'_2017'+sasimov+'.txt')
+    results_Comb = open('impacts/Comb/'+asimov+'/fit_'+smultiple+observable+'_Comb'+sasimov+'.txt')
+elif asimov=='data':
+    results_2016 = open('impacts/2016/fit_'+smultiple+observable+'_2016.txt')
+    results_2017 = open('impacts/2017/fit_'+smultiple+observable+'_2017.txt')
+    results_Comb = open('impacts/Comb/fit_'+smultiple+observable+'_Comb.txt')
 
-results_2016 = open('impacts/2016/'+asimov+'/fit_'+smultiple+observable+'_2016'+sasimov+'.txt')
-results_2017 = open('impacts/2017/'+asimov+'/fit_'+smultiple+observable+'_2017'+sasimov+'.txt')
-results_Comb = open('impacts/Comb/'+asimov+'/fit_'+smultiple+observable+'_Comb'+sasimov+'.txt')
 
 cmunu = 0.001
 
@@ -128,15 +133,22 @@ for i in range(16):
 text += '\n' +'\\hline '
 text += '\n' +'\\end{tabular}'
 if asimov=='asimov':
-    text += '\n' +'\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 Asimov datasets (assuming SM pseudo-data).}'
+    text += '\n' +'\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 Asimov datasets (assuming SM pseudo-data)'
 else:
-    text += '\n' +'\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 data.}'
-text += '\n' +'\\end{center}'
+    text += '\n' +'\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 data'
+if multiple=='single':
+    text += ', from fits of individual coefficients with all others set to zero.'
+elif multiple=='multiple':
+     text += ', from fits of coefficients by groups of 4 with all others set to zero.'
+text += '.}\n' +'\\end{center}'
 text += '\n' +'\\end{table}'
 text += '\n'
 
+if asimov=='asimov':
+    outname = './impacts/Comb/'+asimov+'/Table_Results_'+smultiple+observable+'_Comb'
+elif asimov=='data':
+    outname = './impacts/Comb/Table_Results_'+smultiple+observable+'_Comb'
 
-outname = './impacts/'+year+'/'+asimov+'/Table_Results_'+smultiple+observable+'_'+year
 if asimov == 'asimov':
     outname += '_'+asimov
 print 'Write results in '+outname+'.txt'

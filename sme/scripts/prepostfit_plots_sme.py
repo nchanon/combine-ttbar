@@ -52,8 +52,8 @@ else:
     sasimov = '_data'
 
 
-#doPrePostFitOnly = True
-doPrePostFitOnly = False
+doPrePostFitOnly = True
+#doPrePostFitOnly = False
 
 
 fitkind = 'prefit'
@@ -64,9 +64,9 @@ fitkind = 'prefit'
 #else:
 #    sfitkind = "Post-fit"
 
-rbin='r'
-r_range='0.8,1.2'
-npoints=20
+#rbin='r'
+#r_range='0.8,1.2'
+#npoints=20
 
 ###################
 ## FitDiagnostics
@@ -115,6 +115,8 @@ syst_list = []
 syst_uncert = []
 
 file = open('diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log')
+
+'''
 iline=0
 for line in file:
     j = 0
@@ -131,6 +133,31 @@ for line in file:
             syst_uncert.append(float(word[:-1]))
 	j += 1
     iline += 1
+'''
+
+iline=0
+for line in file:
+    j = 0
+    isHighlightedFirst = False
+    isHighlightedSecond = False
+    for word in line.split():
+        #print(str(iline)+' j='+str(j)+' '+word)
+        if iline>3:
+            if iline>2 and j==0:
+                syst_list.append(word)
+            if iline>2 and j==1 and word=='!':
+                isHighlightedFirst = True
+            if iline>2 and j==3 and word=='!':
+                isHighlightedSecond = True
+            if iline>2 and j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
+                syst_uncert.append(float(word))
+            if iline>2 and j==5 and isHighlightedSecond==True:
+                syst_uncert.append(float(word[:-1]))
+            if iline>2 and j==6 and isHighlightedFirst==True:
+                syst_uncert.append(float(word[:-1]))
+
+        j += 1
+    iline += 1
 
 print str(len(syst_list))+ ' ' + str(len(syst_uncert))
 
@@ -140,11 +167,11 @@ print syst_uncert
 canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
 pad = TPad("pad","pad",0,0,1,1)
 pad.SetLeftMargin(0.06)
-pad.SetBottomMargin(0.35)
+pad.SetBottomMargin(0.45)
 pad.Draw()
 pad.cd()
 
-if asimov=='injectiontest':
+if asimov=='asimov' or asimov=='injectiontest':
     syst_uncert_new = []
     syst_list_new = []
     for i in range(len(syst_uncert)):
@@ -155,12 +182,17 @@ if asimov=='injectiontest':
     #syst_list = syst_list_new
     #syst_uncert.clear()
     #syst_uncer = syst_uncert_new
-    print str(len(syst_list))+ ' ' + str(len(syst_uncert))
+    print str(len(syst_list_new))+ ' ' + str(len(syst_uncert_new))
 else:
     syst_list_new = syst_list
     syst_uncert_new = syst_uncert
-
     print str(len(syst_list_new))+ ' ' +str(len(syst_uncert_new))
+
+syst_double_list = []
+for isyst in range(len(syst_list_new)):
+    syst_double_list.append([syst_list_new[isyst],syst_uncert_new[isyst]])
+
+syst_double_list.sort(key=lambda row: row[0])
 
 hist_nuis = TH1F("hist_nuis","hist_nuis",len(syst_list_new),0,len(syst_list_new))
 hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new),0,len(syst_list_new))
@@ -168,8 +200,10 @@ hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new)
 
 for i in range(len(syst_list_new)):
     hist_nuis.SetBinContent(1+i,1)
-    hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
-    hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
+    hist_nuis.GetXaxis().SetBinLabel(1+i,syst_double_list[i][0])
+    hist_nuis_pulled.SetBinError(1+i,syst_double_list[i][1])
+    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
+    #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
     #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
     hist_nuis_pulled.SetBinContent(1+i,0)
 

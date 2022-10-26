@@ -1,7 +1,13 @@
 #!/bin/bash
 
-for year in 2016 2017 Comb
+for year in Comb
+#for year in 2016 2017 Comb
 do
-  echo sbatch scripts/slurm_UncertaintyBreakdown.sh ${year}
-  sbatch scripts/slurm_UncertaintyBreakdown.sh ${year}
+  for breakdown in time_breakdown kind_breakdown exp_breakdown theory_breakdown
+  do 
+    echo sbatch scripts/slurm_UncertaintyBreakdown.sh ${year} ${breakdown}
+    sbatch scripts/slurm_UncertaintyBreakdown.sh ${year} ${breakdown}
+    #python scripts/uncertainty_breakdown_detailed_normalized.py n_bjets ${year} ${breakdown} asimov
+
+  done 
 done

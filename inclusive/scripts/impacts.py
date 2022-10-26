@@ -58,7 +58,7 @@ if (doPrePostFitOnly==False):
     cmd1 = 'combineTool.py -M Impacts -n .Impact_'+observable+'_'+year+stimebin+sasimov+' -d inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root '+asi+' -m 125 '
     cmd2 = cmd1
     cmd3 = cmd1
-    cmd1 += '--doInitialFit --robustFit 1 ' #--cminDefaultMinimizerStrategy 0 ' #--robustFit 1
+    cmd1 += '--doInitialFit ' #' --cminDefaultMinimizerStrategy 0 ' #--robustFit 1
     cmd2 += '--robustFit 1 --doFits'  #--cminDefaultMinimizerStrategy 0
     cmd3 += '-o '+observable+'_inclusive_impacts_'+year+stimebin+sasimov+'.json '
 

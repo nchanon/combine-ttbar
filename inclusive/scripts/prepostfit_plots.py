@@ -67,8 +67,8 @@ doPrePostFitOnly = True
 #doPrePostFitOnly = False
 
 
-fitkind = 'prefit'
-#fitkind = 'fit_s'
+#fitkind = 'prefit'
+fitkind = 'fit_s'
 
 #if (fitkind=='prefit'):
 #    sfitkind = "Pre-fit"
@@ -126,6 +126,7 @@ if (doPrePostFitOnly==True):
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 --rMin 0 --rMax 10 --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
     cmd5 += ' --skipBOnlyFit --plots'
+    cmd5 += ' -n .'+observable+'_inclusive'+stimebin+'_'+year
     os.system('echo using the root file : inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root ' )
     os.system('echo '+cmd5)
     os.system(cmd5)
@@ -133,7 +134,7 @@ if (doPrePostFitOnly==True):
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
 
 
-fDiagnostics = TFile("fitDiagnostics.Test.root","READ")
+fDiagnostics = TFile('fitDiagnostics.'+observable+'_inclusive'+stimebin+'_'+year+'.root',"READ")
 
 ###################
 ## Correlation plot

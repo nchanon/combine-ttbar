@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 #parser.add_argument('workspace', help='display your input workspace')
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
-parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
+parser.add_argument('asimov',nargs='?', help='set if asimov test', default='asimov')
 
 args = parser.parse_args()
 #workspace = args.workspace
@@ -61,14 +61,22 @@ doFit=True
 ## Core
 ###################
 
+#optim = ' --robustFit 1'
+optim = ' --cminDefaultMinimizerStrategy 0'
+#optim = ' --cminDefaultMinimizerStrategy 0 -s 1 --cminDefaultMinimizerTolerance 0.001'
+#optim = ' --cminDefaultMinimizerType Minuit --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.5'
+
 if doFit:
     cmd = 'combine -M MultiDimFit '
     cmd += asi
     cmd += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace.root'
-    #ucmd += ' --robustFit 1'
+    cmd += optim
+    #cmd += ' --cminDefaultMinimizerType Minuit'
+    #cmd += ' --robustFit 1'
     #cmd += ' --cminDefaultMinimizerStrategy 0'
-    cmd += ' --algo=cross'
-    #cmd += ' --algo=singles'
+    #cmd += ' --cminDefaultMinimizerTolerance 0.001'
+    #cmd += ' --algo=cross'
+    cmd += ' --algo=singles'
     cmd += ' -n differential_'+observable+'_'+year+'_'+asimov
     cmd += ' > log_differential_'+observable+'_'+year+'_'+asimov
 

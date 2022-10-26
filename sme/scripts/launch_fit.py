@@ -73,7 +73,7 @@ for i in range(len(cmd_input)):
            '-M', 
            'MultiDimFit',
            '--algo=singles',
-	   ' --cminDefaultMinimizerStrategy',
+	   '--cminDefaultMinimizerStrategy',
 	   '0', 
            #'--robustFit',
            #'1',

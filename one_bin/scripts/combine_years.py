@@ -12,16 +12,40 @@ observable = args.observable
 #wilson = args.wilson
 #asimov = args.asimov
 
+doTest=True
+#doTest=False
+
 #def asimov_param(w):
 #    if asimov == 'asimov':
 #        return ['--setParameters',w+'=0','-t','-1']
 #    return []
+
+if doTest:
+    #n_bjets_24_0_datacard.txt
+    for year in range(2016,2018):
+	for n in range(24):
+	    #os.system('cp inputs/'+year+'/combine_'+observable+'_24bins_'+str(n)+'_card.txt ./combine_'+observable+'_24bins_'+str(n)+'_'+year+'_card.txt')
+	    cmd = 'cp inputs/'+str(year)+'/'+observable+'_24_'+str(n)+'_datacard.txt ./combine_'+observable+'_24bins_'+str(n)+'_'+str(year)+'_card.txt'
+	    print cmd
+	    os.system(cmd)
+
+    cmd = 'combineCards.py '
+    for year in range(2016,2018):
+	for n in range(24):
+	    cmd += ' combine_'+observable+'_'+str(24)+'bins_'+str(n)+'_'+str(year)+'_card.txt '
+    cmd += ' > inputs/Comb/combine_'+observable+'_24bins_Comb_card.txt'
+
+    print cmd
+    os.system(cmd)
+    exit()
 
 #combine_m_dilep_24bins_2016_card.txt
 os.system('cp inputs/2016/combine_'+observable+'_24bins_2016_card.txt .')
 os.system('cp inputs/2017/combine_'+observable+'_24bins_2017_card.txt .')
 
 cmd = 'combineCards.py combine_'+observable+'_24bins_2016_card.txt combine_'+observable+'_24bins_2017_card.txt > inputs/Comb/combine_'+observable+'_24bins_Comb_card.txt'
+
+
 print cmd
 os.system(cmd)
 

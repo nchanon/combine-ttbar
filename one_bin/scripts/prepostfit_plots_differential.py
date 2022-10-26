@@ -127,8 +127,10 @@ if (doPrePostFitOnly==False):
 	os.system(cmd2)
 	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
-    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+' --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
-    cmd5 += ' --plots'
+    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi
+    #cmd5 +=  ' --cminDefaultMinimizerType Minuit --cminDefaultMinimizerStrategy 0'
+    cmd5 += ' --cminDefaultMinimizerStrategy 0'
+    cmd5 += ' --saveShapes --saveWithUncertainties --plots'
     cmd5 += ' -n .prefit_'+observable+'_'+year+'_'+asimov
     print cmd5
     #cmd5 += ' --skipBOnlyFit --plots'
@@ -147,9 +149,10 @@ fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+asimov+'.r
 ###################
 
 tolerance = 0.05
-poi = 'r_0'
+#poi = 'r_0'
 #poi = 'r_1'
 #poi = 'r_18'
+poi = 'r_23'
 
 cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '
 cmd6 += poi
@@ -158,7 +161,9 @@ cmd6 += poi
 #    if (i!=23): 
 #        cmd6 += ','
 cmd6 += ' --skipFitB'
-cmd6 += ' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log'
+#cmd6 += ' --all '
+cmd6 += ' --vtol '+str(tolerance)
+cmd6 += ' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log'
 print cmd6
 os.system(cmd6)
 
@@ -200,10 +205,9 @@ print syst_uncert
 canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
 pad = TPad("pad","pad",0,0,1,1)
 pad.SetLeftMargin(0.06)
-pad.SetBottomMargin(0.35)
+pad.SetBottomMargin(0.45)
 pad.Draw()
 pad.cd()
-
 
 
 syst_uncert_new = []
@@ -222,14 +226,24 @@ if asimov=='asimov':
 else:
     syst_list_new = syst_list
     syst_uncert_new = syst_uncert
+    print str(len(syst_list))+ ' ' + str(len(syst_uncert))
+
+syst_double_list = []
+for isyst in range(len(syst_list_new)):
+    syst_double_list.append([syst_list_new[isyst],syst_uncert_new[isyst]])
+
+syst_double_list.sort(key=lambda row: row[0])
+
 
 hist_nuis = TH1F("hist_nuis","hist_nuis",len(syst_list_new),0,len(syst_list_new))
 hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new),0,len(syst_list_new))
 
 for i in range(len(syst_list_new)):
     hist_nuis.SetBinContent(1+i,1)
-    hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
-    hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
+    hist_nuis.GetXaxis().SetBinLabel(1+i,syst_double_list[i][0])
+    hist_nuis_pulled.SetBinError(1+i,syst_double_list[i][1])
+    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
+    #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
     #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
     hist_nuis_pulled.SetBinContent(1+i,0)
 
@@ -251,8 +265,8 @@ latex.DrawLatex(0.25,0.9,year+' '+poi+'  '+asimov)
 
 
 canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.pdf')
-#raw_input()
-#sys.exit()
+raw_input()
+sys.exit()
 
 
 ###################
@@ -299,8 +313,8 @@ hCovPOI.Draw("COLZ")
 #canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
 canvas.Print("impacts/CorrelationMatrixSignalStrength_"+observable+"_"+year+".pdf")
 
-raw_input()
-sys.exit()
+#raw_input()
+#sys.exit()
 
 
 ###################
@@ -496,7 +510,7 @@ def displayPrePostFitPlot(fitkind):
 	legend.AddEntry(hist_vjets_allbins, "W/Z+jets", "f")
 	legend.AddEntry(hist_dibosons_allbins, "Dibosons", "f")
 	legend.AddEntry(hist_ttx_allbins, "t#bar{t}+X", "f")
-	if (doPrePostFitOnly==False):
+	if (fitkind!='prefit'):
 	    legend.AddEntry(hist_data_allbins, "data")
 	else:
 	    legend.AddEntry(hist_data_allbins, "asimov")

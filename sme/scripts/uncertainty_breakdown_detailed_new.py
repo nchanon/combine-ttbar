@@ -16,8 +16,8 @@ from ROOT import TGraphAsymmErrors
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
 
-#doPlotsOnly = True
-doPlotsOnly = False
+doPlotsOnly = True
+#doPlotsOnly = False
 
 ###################
 ## Initialisation
@@ -28,8 +28,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 parser.add_argument('nuisancegroup', help='nuisance group', default='')
-parser.add_argument('wilson', help='display your wilson coefficient')
-parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
+parser.add_argument('wilson', help='display your wilson coefficient', default='sme_all')
+parser.add_argument('asimov',nargs='?', help='set if asimov test', default='asimov')
 
 args = parser.parse_args()
 observable = args.observable
@@ -52,6 +52,9 @@ if nuisancegroup=='putrig_breakdown':
     NuisanceGroup = "pu_trigger"
 if nuisancegroup=='putrigsmedecay_breakdown':
     NuisanceGroup = "pu_trigger_smedecay"
+if nuisancegroup=='smedecay_breakdown':
+    NuisanceGroup = "smedecay"
+
 
 ###################
 ## Nuisances to be evaluated
@@ -61,30 +64,31 @@ list_nuisgroups=[]
 list_nuisnames=[]
 
 #Grouping by kind of nuisances
-nuis_lumi_time_uncorr = 'rgx{lumi_flat_uncor_.*},lumi_flat_cor'
+nuis_lumi_time_flat = 'rgx{lumi_flat_uncor_.*},lumi_flat_cor'
 nuis_lumi_time_corr = 'rgx{lumi_stability_.*},rgx{lumi_linearity_.*}'
-nuis_lumi = nuis_lumi_time_uncorr+','+nuis_lumi_time_corr
+nuis_lumi = nuis_lumi_time_flat+','+nuis_lumi_time_corr
 
 nuis_bkgdnorm = 'rsignal,rttx,rsingletop,rdibosons,rvjets'
 
-nuis_theory = 'syst_pt_top,syst_ps_isr_signal,syst_ps_isr_singletop,syst_ps_fsr,syst_qcdscale_signal,syst_qcdscale_singletop,syst_qcdscale_ttx,syst_qcdscale_vjets,syst_pdfas,hdamp,CP5,erdOn,GluonMove,QCDinspired,mtop'
+nuis_theory = 'syst_pt_top,rgx{syst_ps_isr.*},rgx{syst_ps_fsr.*},rgx{syst_qcdscale.*},syst_pdfas,hdamp,CP5,erdOn,GluonMove,QCDinspired,mtop'
 
 nuis_theory_pttop = 'syst_pt_top'
 nuis_theory_mtop = 'mtop'
-nuis_theory_ps = 'syst_ps_isr_signal,syst_ps_isr_singletop,syst_ps_fsr'
+nuis_theory_ps = 'rgx{syst_ps_isr.*},rgx{syst_ps_fsr.*}'
 nuis_theory_qcdscale = 'rgx{syst_qcdscale_.*}'
 nuis_theory_pdfas = 'syst_pdfas'
 nuis_theory_hdamp = 'hdamp'
 nuis_theory_uetune = 'CP5'
 nuis_theory_colorreco = 'erdOn,GluonMove,QCDinspired'
 
-
-nuis_exp_time_corr = 'rgx{.*trig.*},rgx{syst_pu.*}'
-nuis_exp_time_uncorr = 'rgx{syst_elec_reco.*},rgx{syst_elec_id.*},rgx{syst_muon_iso.*},rgx{syst_muon_id.*},rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*},rgx{syst_prefiring.*},rgx{.*jec.*}'
-nuis_exp = nuis_exp_time_corr+','+nuis_exp_time_uncorr
+nuis_jec_uncorr = 'rgx{Absolute.*},rgx{BBEC1.*},rgx{RelativeBal.*},rgx{RelativeSample.*}'
+nuis_exp_time_flat = 'FlavorPureGluon_jec,FlavorPureBottom_jec'
+nuis_exp_time_corr = 'rgx{.*trig_syst.*},rgx{.*syst_pu}'
+nuis_exp_time_uncorr = 'rgx{.*trig_stat.*},rgx{syst_elec_reco.*},rgx{syst_elec_id.*},rgx{.*muon_iso.*},rgx{.*muon_id.*},rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*},rgx{syst_prefiring.*},'+nuis_jec_uncorr  #rgx{.*jec.*}''
+nuis_exp = nuis_exp_time_flat+','+nuis_exp_time_corr+','+nuis_exp_time_uncorr
 
 nuis_exp_elec = 'rgx{syst_elec_reco.*},rgx{syst_elec_id.*}'
-nuis_exp_muon = 'rgx{syst_elec_id.*},rgx{syst_muon_iso.*}'
+nuis_exp_muon = 'rgx{.*muon_id.*},rgx{.*muon_iso.*}'
 nuis_exp_pu = 'rgx{syst_pu.*}'
 nuis_exp_btag = 'rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*}'
 nuis_exp_jec = 'rgx{.*jec.*}'
@@ -94,9 +98,13 @@ nuis_exp_trigger = 'rgx{.*trig.*}'
 #nuis_mcstat = 'autoMCStats'
 nuis_mcstat = 'rgx{MCstat.*}'
 
+nuis_sme_singletop_XX = 'sme_decay_XX'
+nuis_sme_singletop_XY = 'sme_decay_XY'
+nuis_sme_singletop_XZ = 'sme_decay_XZ'
+nuis_sme_singletop_YZ = 'sme_decay_YZ'
 nuis_sme_singletop = 'rgx{sme_decay.*}'
 
-nuis_time_flat = nuis_lumi_time_uncorr+','+nuis_bkgdnorm+','+nuis_theory
+nuis_time_flat = nuis_lumi_time_flat+','+nuis_bkgdnorm+','+nuis_theory+','+nuis_exp_time_flat
 nuis_time_corr = nuis_lumi_time_corr+','+nuis_exp_time_corr+','+nuis_sme_singletop
 
 if NuisanceGroup=="time_flat_uncorr_corr_mcstat":
@@ -172,6 +180,18 @@ if NuisanceGroup=="pu_trigger_smedecay":
     list_nuisnames.append('trig_noNvtx')
     list_nuisnames.append('sme_decay')
 
+if NuisanceGroup=="smedecay":
+    list_nuisgroups.append(nuis_sme_singletop_XX)
+    list_nuisgroups.append(nuis_sme_singletop_XY)
+    list_nuisgroups.append(nuis_sme_singletop_XZ)
+    list_nuisgroups.append(nuis_sme_singletop_YZ)
+    list_nuisnames.append('sme_decay_XX')
+    list_nuisnames.append('sme_decay_XY')
+    list_nuisnames.append('sme_decay_XZ')
+    list_nuisnames.append('sme_decay_YZ')
+
+
+
 nuisnames_remain = "Others"
 #nuisnames_remain = "MCstat"
 
@@ -194,6 +214,8 @@ def asimov_param(w):
 	wrange='15'
     if asimov == 'asimov':
         sasimov += '--setParameters '+w+'=0 -t -1'
+    elif asimov == 'injectiontest':
+        sasimov += '--setParameters '+w+'=1 -t -1 '
     sasimov += '  --setParameterRanges '+w+'=-'+wrange+','+wrange
     return sasimov
 
@@ -221,7 +243,7 @@ def getwilsontext(wilson):
 ## Core
 ###################
 
-
+optim = ' --cminDefaultMinimizerStrategy 0 '
 npoints=10
 
 if wilson_=='sme_all':
@@ -236,12 +258,12 @@ print wilson_list_all
 for wilson in wilson_list_all:
 
     #Nominal fit
-    cmd1 = 'combine -M MultiDimFit -n .nominal_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+' --robustFit 1 '
+    cmd1 = 'combine -M MultiDimFit -n .nominal_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov + optim #' --robustFit 1 '
     cmd1 +=' -d ./inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root '
     cmd1 += asimov_param(wilson) + ' --algo grid --points '+str(npoints)
 
     #Snaphsot
-    cmd2 = 'combine -M MultiDimFit -n .snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+' --algo=singles --robustFit 1 '
+    cmd2 = 'combine -M MultiDimFit -n .snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov+' --algo=singles '+optim#--robustFit 1 '
     cmd2 +=' -d ./inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root ' 
     cmd2 += asimov_param(wilson) +' --saveWorkspace'
 
@@ -249,16 +271,16 @@ for wilson in wilson_list_all:
     #cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot.MultiDimFit.mH120.root -n .freezeMCStats '+asimov_param(wilson)+' --algo grid --points 30 --freezeNuisanceGroups autoMCStats --snapshotName MultiDimFit'
 
     #Stat. uncertainty only
-    cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'.MultiDimFit.mH120.root '
-    cmd3 += '-n .freezeall_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup +' '
+    cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '+optim
+    cmd3 += '-n .freezeall_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov +' '
     cmd3 += asimov_param(wilson)+' --algo grid --points '+str(npoints*5)+' '
     cmd3 += '--freezeParameters allConstrainedNuisances --snapshotName MultiDimFit'
 
     #Fit removing group uncertainties
     cmd4 = []
     for k in range(len(list_nuisgroups)):
-        cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'.MultiDimFit.mH120.root '
-	cmd_k += '-n .freeze_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup +' '
+        cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '+optim
+	cmd_k += '-n .freeze_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov +' '
 	cmd_k += asimov_param(wilson)+' --algo grid --points '+str(npoints*3)+' '
         if (list_nuisgroups[k]=='autoMCStats'):
             cmd_k += '--freezeNuisanceGroups '+list_nuisgroups[k]+' --snapshotName MultiDimFit'
@@ -271,18 +293,18 @@ for wilson in wilson_list_all:
     #if (asimov=='asimov'): cmd5 += 'Asimov'
     #cmd5 += " --breakdown MCStats,Syst,Stat > uncertainty_breakdown_"+wilson+".log"
 
-    cmd5 = "python plot1DScan.py higgsCombine.nominal_"+observable+"_"+year+"_"+wilson+"_"+NuisanceGroup+".MultiDimFit.mH120.root --others "
+    cmd5 = "python plot1DScan.py higgsCombine.nominal_"+observable+"_"+year+"_"+wilson+"_"+NuisanceGroup+'_'+asimov+".MultiDimFit.mH120.root --others "
     for k in range(len(list_nuisgroups)):
-        cmd5 += " 'higgsCombine.freeze_"+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+".MultiDimFit.mH120.root:Freeze_"+list_nuisnames[k]+":"+str(k+2)+"' "
-    cmd5 += " 'higgsCombine.freezeall_"+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+".MultiDimFit.mH120.root:FreezeAll:1' "
-    cmd5 += "-o impacts/"+year+"/"+ observable + "_UncertaintyBreakdown_detailed_"+year+"_"+wilson+"_"+NuisanceGroup+" "
+        cmd5 += " 'higgsCombine.freeze_"+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov+".MultiDimFit.mH120.root:Freeze_"+list_nuisnames[k]+":"+str(k+2)+"' "
+    cmd5 += " 'higgsCombine.freezeall_"+observable+'_'+year+'_'+wilson+'_'+NuisanceGroup+'_'+asimov+".MultiDimFit.mH120.root:FreezeAll:1' "
+    cmd5 += "-o impacts/"+year+"/"+ observable + "_UncertaintyBreakdown_detailed_"+year+"_"+wilson+"_"+NuisanceGroup+"_"+asimov+" "
     cmd5 += "--POI "+wilson
     cmd5 += " --main-label "
     if (asimov=='asimov'): cmd5 += 'Asimov'
     cmd5 += " --breakdown "
     for k in range(len(list_nuisgroups)):
         cmd5 += list_nuisnames[k] + ","
-    cmd5 += "Others,Stat > impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log"
+    cmd5 += "Others,Stat > impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+"_"+asimov+".log"
 
     if (doPlotsOnly==False):
         print cmd1
@@ -330,10 +352,10 @@ rate_stat = []
 for wilson in wilson_list_all:
 
     try:
-        file = open("./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log")
+        file = open("./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+"_"+asimov+".log")
     except:
-        print "Problem with file: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log"
-    print "Opened: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+".log"
+        print "Problem with file: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+"_"+asimov+".log"
+    print "Opened: "+"./impacts/"+year+"/" + observable + "_uncertainty_breakdown_detailed_"+wilson+"_"+NuisanceGroup+"_"+asimov+".log"
 
     individual_uncert_up = []
     individual_uncert_down = []
@@ -480,6 +502,8 @@ legend.Draw()
 legend.Draw("SAME")
 
 resultname = './impacts/'+year+'/'+observable+'_smefit_'+nuisancegroup+'_'+year
+if (asimov=='injectiontest'):
+    resultname += '_'+asimov
 
 if len(wilson_list_all)>=8:
     canvas.SaveAs(resultname+'.pdf')

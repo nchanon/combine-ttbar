@@ -10,5 +10,5 @@ DIR="/gridgroup/cms/nchanon/CMSSW_10_2_13/src/combine-ttbar/one_bin/"
 
 cd ${DIR}
 
-python scripts/uncertainty_breakdown.py m_dilep ${1} asimov
+python scripts/uncertainty_breakdown_detailed_normalized.py n_bjets ${1} ${2} asimov
 

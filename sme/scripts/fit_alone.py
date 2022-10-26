@@ -46,9 +46,11 @@ print '-------------------'
 cmd = ['combine', 
        '-M', 
        'MultiDimFit',
-       '--algo=singles', 
-       '--robustFit',
-       '1', 
+       '--algo=singles',
+       '--cminDefaultMinimizerStrategy',
+       '0',
+       #'--robustFit',
+       #'1', 
        cmd_input]
 for l in asimov_param:
     cmd.append(l)

@@ -20,8 +20,11 @@ from ROOT import TGraphAsymmErrors
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
 
-doPlotsOnly = True
-#doPlotsOnly = False
+#doPlotsOnly = True
+doPlotsOnly = False
+
+#doNormBreakDown = False
+#doNormBreakDown = True
 
 ###################
 ## Initialisation
@@ -69,7 +72,10 @@ if asimov == 'asimov':
 
 #optim = ''
 #optim = ' --robustFit 1'
-optim = ' --cminDefaultMinimizerStrategy 0 '
+#optim = ' --cminDefaultMinimizerStrategy 0 '
+optim = ' --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.01 '
+#optim = ' --cminDefaultMinimizerStrategy 2 '
+#optim = ' --cminDefaultMinimizerType Minuit --cminDefaultMinimizerStrategy 0'
 
 NuisanceGroup = ""
 if nuisancegroup=='test':
@@ -94,32 +100,31 @@ list_nuisgroups=[]
 list_nuisnames=[]
 
 #Grouping by kind of nuisances
-nuis_lumi_time_uncorr = 'rgx{lumi_flat_uncor_.*},lumi_flat_cor'
+nuis_lumi_time_flat = 'rgx{lumi_flat_uncor_.*},lumi_flat_cor'
 nuis_lumi_time_corr = 'rgx{lumi_stability_.*},rgx{lumi_linearity_.*}'
-nuis_lumi = nuis_lumi_time_uncorr+','+nuis_lumi_time_corr
+nuis_lumi = nuis_lumi_time_flat+','+nuis_lumi_time_corr
 
 nuis_bkgdnorm = 'rttx,rsingletop,rdibosons,rvjets'
 
-#Careful: muon iso, fsr single top and signal, pu, stat...
-
-nuis_theory = 'syst_pt_top,syst_ps_isr_signal,syst_ps_isr_singletop,syst_ps_fsr,syst_qcdscale_signal,syst_qcdscale_singletop,syst_qcdscale_ttx,syst_qcdscale_vjets,syst_pdfas,hdamp,CP5,erdOn,GluonMove,QCDinspired,mtop'
+nuis_theory = 'syst_pt_top,rgx{syst_ps_isr.*},rgx{syst_ps_fsr.*},rgx{syst_qcdscale.*},syst_pdfas,hdamp,CP5,erdOn,GluonMove,QCDinspired,mtop'
 
 nuis_theory_pttop = 'syst_pt_top'
 nuis_theory_mtop = 'mtop'
-nuis_theory_ps = 'syst_ps_isr_signal,syst_ps_isr_singletop,syst_ps_fsr'
+nuis_theory_ps = 'rgx{syst_ps_isr.*},rgx{syst_ps_fsr.*}'
 nuis_theory_qcdscale = 'rgx{syst_qcdscale_.*}'
 nuis_theory_pdfas = 'syst_pdfas'
 nuis_theory_hdamp = 'hdamp'
 nuis_theory_uetune = 'CP5'
 nuis_theory_colorreco = 'erdOn,GluonMove,QCDinspired'
 
-
-nuis_exp_time_corr = 'rgx{.*trig.*}'
-nuis_exp_time_uncorr = 'rgx{syst_elec_reco.*},rgx{syst_elec_id.*},rgx{syst_muon_iso.*},rgx{syst_muon_id.*},rgx{syst_pu.*},rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*},rgx{syst_prefiring.*},rgx{.*jec.*}'
-nuis_exp = nuis_exp_time_corr+','+nuis_exp_time_uncorr
+nuis_jec_uncorr = 'rgx{Absolute.*},rgx{BBEC1.*},rgx{RelativeBal.*},rgx{RelativeSample.*}'
+nuis_exp_time_flat = 'FlavorPureGluon_jec,FlavorPureBottom_jec'
+nuis_exp_time_corr = 'rgx{.*trig_syst.*},rgx{.*syst_pu}'
+nuis_exp_time_uncorr = 'rgx{.*trig_stat.*},rgx{syst_elec_reco.*},rgx{syst_elec_id.*},rgx{.*muon_iso.*},rgx{.*muon_id.*},rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*},rgx{syst_prefiring.*},'+nuis_jec_uncorr  #rgx{.*jec.*}'
+nuis_exp = nuis_exp_time_flat+','+nuis_exp_time_corr+','+nuis_exp_time_uncorr
 
 nuis_exp_elec = 'rgx{syst_elec_reco.*},rgx{syst_elec_id.*}'
-nuis_exp_muon = 'rgx{syst_elec_id.*},rgx{syst_muon_iso.*}'
+nuis_exp_muon = 'rgx{.*muon_id.*},rgx{.*muon_iso.*}'
 nuis_exp_pu = 'rgx{syst_pu.*}'
 nuis_exp_btag = 'rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*}'
 nuis_exp_jec = 'rgx{.*jec.*}'
@@ -131,7 +136,7 @@ nuis_exp_trigger = 'rgx{.*trig.*}'
 #nuis_mcstat = 'autoMCStats'
 nuis_mcstat = 'rgx{MCstat.*}'
 
-nuis_time_flat = nuis_lumi_time_uncorr+','+nuis_bkgdnorm+','+nuis_theory
+nuis_time_flat = nuis_lumi_time_flat+','+nuis_bkgdnorm+','+nuis_theory+','+nuis_exp_time_flat
 nuis_time_corr = nuis_lumi_time_corr+','+nuis_exp_time_corr
 
 if NuisanceGroup=="time_flat_uncorr_corr_mcstat":
@@ -241,7 +246,7 @@ cmd2 += optim
 cmd2 += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace.root '
 cmd2 += asi
 #cmd2 += '--parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range+' --floatOtherPOIs='+doFloatPOI
-cmd2 += ' --algo=singles  --saveWorkspace'
+cmd2 += ' --algo=singles  --saveWorkspace --saveFitResult'
 
 cmd2_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'.MultiDimFit.mH120.root '
 cmd2_fd += optim
@@ -256,7 +261,7 @@ cmd3 += asi
 #cmd3 += '--parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range+' --floatOtherPOIs='+doFloatPOI
 #cmd3 += ' --algo grid --points '+str(npoints*5)+' '
 cmd3 += '--freezeParameters allConstrainedNuisances --snapshotName MultiDimFit'
-cmd3 += ' --algo=singles  --saveWorkspace'
+cmd3 += ' --algo=singles  --saveWorkspace --saveFitResult'
 
 cmd3_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'.MultiDimFit.mH120.root '
 cmd3_fd += optim
@@ -276,7 +281,7 @@ for k in range(len(list_nuisgroups)):
 	cmd_k += '--freezeNuisanceGroups '+list_nuisgroups[k]+' --snapshotName MultiDimFit'
     else:
 	cmd_k += '--freezeParameters '+list_nuisgroups[k]+' --snapshotName MultiDimFit'
-    cmd_k += ' --algo=singles  --saveWorkspace'
+    cmd_k += ' --algo=singles  --saveWorkspace --saveFitResult'
     cmd4.append(cmd_k)
 
 cmd4_fd = []
@@ -307,28 +312,28 @@ for k in range(len(list_nuisgroups)):
 #if (asimov == 'asimov'): cmd6 += asimov+'/'
 #cmd6 += observable + '_UncertaintyBreakdown_detailed_'+year+'_'+rbin+'_'+NuisanceGroup+'.pdf'
 
+if (doPlotsOnly==True):
+    print cmd2
+    print cmd3
+    for k in range(len(list_nuisgroups)):
+        print cmd4[k]
+
+
 if (doPlotsOnly==False):
-    #print cmd1
-    #os.system(cmd1)
     print cmd2
     os.system(cmd2)
-    print cmd2_fd
-    os.system(cmd2_fd)
+    #print cmd2_fd
+    #os.system(cmd2_fd)
     print cmd3
     os.system(cmd3)
-    print cmd3_fd
-    os.system(cmd3_fd)
+    #print cmd3_fd
+    #os.system(cmd3_fd)
     for k in range(len(list_nuisgroups)):
         print cmd4[k]
         os.system(cmd4[k])
-    for k in range(len(list_nuisgroups)):
-	print cmd4_fd[k]
-	os.system(cmd4_fd[k])
-    #print cmd5
-    #os.system(cmd5)
-    #print cmd6
-    #os.system(cmd6)
-    
+    #for k in range(len(list_nuisgroups)):
+	#print cmd4_fd[k]
+	#os.system(cmd4_fd[k])
 
 #exit()
 
@@ -365,6 +370,9 @@ rate_total = []
 rate_syst = []
 rate_stat = []
 
+tree_map = []
+for i in range(ntimebin):
+    tree_map.append(0)
 
 #for j in range(1):
 for j in range(ntimebin):
@@ -372,6 +380,7 @@ for j in range(ntimebin):
 
     #file = open('impacts/'+year+'/'+observable+'_uncertainty_breakdown_detailed_'+rbin+'_'+NuisanceGroup+'.log')
 
+    value_central = []
     total_uncert_up = []
     total_uncert_down = []
     individual_uncert_up = []
@@ -388,19 +397,35 @@ for j in range(ntimebin):
 	if k==len(list_nuisnames)-1:
 	    filein = TFile("./higgsCombine.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+".MultiDimFit.mH120.root")
 
-	tree = filein.Get("limit")
-	for l in range(49): #this method works only for asimov (to be updated for data)
-	    tree.GetEvent(l)
-	    val = tree.GetLeaf(rbin).GetValue()
-	    if (val<1):
-		unc_down = val
-	    if (val>1):
-		unc_up = val
-	val = 1
+        tree = filein.Get("limit")
+
+	if j==0 and k==0:
+	    ib=0
+	    for b in tree.GetListOfBranches():
+		if b.GetName().find("r_")!=-1:
+		    num = int(b.GetName()[2:])
+		    tree_map[num] = ib
+		    print b.GetName() + ' ' + str(num)
+		    ib += 1
+
+	tree.GetEvent(0)
+	value_central.append(tree.GetLeaf(rbin).GetValue())
+
+	#for l in range(ntimebin): 
+	tree.GetEvent(1+2*tree_map[j])
+	unc_down = tree.GetLeaf(rbin).GetValue()
+        tree.GetEvent(1+2*tree_map[j]+1)
+	unc_up = tree.GetLeaf(rbin).GetValue()
+	    #val = tree.GetLeaf(rbin).GetValue()
+	    #if (val<1):
+	        #unc_down = val
+	    #if (val>1):
+		#unc_up = val
+	#val = 1
 	total_uncert_up.append(unc_up-1)
-	total_uncert_down.append(unc_down-1)
-	individual_uncert_up.append(unc_up-1)
-        individual_uncert_down.append(unc_down-1)
+	total_uncert_down.append(abs(unc_down-1))
+	#individual_uncert_up.append(unc_up-1)
+        #individual_uncert_down.append(unc_down-1)
 
 	#print 'j='+str(j)+' '+rbin+' mu='+str(val)+' mu_up='+str(unc_up)+' mu_down='+str(unc_down) 
 	filein.Close()
@@ -408,22 +433,25 @@ for j in range(ntimebin):
     total_uncert_up_allbins.append(total_uncert_up)
     total_uncert_down_allbins.append(total_uncert_down)
 
-    for k in range(len(individual_uncert_up)):
-	if k!=0 and k!=len(individual_uncert_up)-1:
-	    if (individual_uncert_down[0]*individual_uncert_down[0]-individual_uncert_down[k]*individual_uncert_down[k]>0):
-		individual_uncert_down[k] = math.sqrt(individual_uncert_down[0]*individual_uncert_down[0]-individual_uncert_down[k]*individual_uncert_down[k])
+    for k in range(len(list_nuisnames)):
+	if k==0 or k==len(list_nuisnames)-1:
+	    individual_uncert_down.append(total_uncert_down[k])
+	    individual_uncert_up.append(total_uncert_up[k])
+	if k!=0 and k!=len(list_nuisnames)-1:
+	    if (total_uncert_down[0]*total_uncert_down[0]-total_uncert_down[k]*total_uncert_down[k]>0):
+		individual_uncert_down.append(math.sqrt(total_uncert_down[0]*total_uncert_down[0]-total_uncert_down[k]*total_uncert_down[k]))
 	    else:
-		individual_uncert_down[k] = 0
-            if (individual_uncert_up[0]*individual_uncert_up[0]-individual_uncert_up[k]*individual_uncert_up[k]>0):
-		individual_uncert_up[k] = math.sqrt(individual_uncert_up[0]*individual_uncert_up[0]-individual_uncert_up[k]*individual_uncert_up[k])
+		individual_uncert_down.append(0)
+            if (total_uncert_up[0]*total_uncert_up[0]-total_uncert_up[k]*total_uncert_up[k]>0):
+		individual_uncert_up.append(math.sqrt(total_uncert_up[0]*total_uncert_up[0]-total_uncert_up[k]*total_uncert_up[k]))
 	    else:
-		individual_uncert_up[k] = 0
+		individual_uncert_up.append(0)
 
-    for k in range(len(individual_uncert_up)):
-	if k!=0 and k!=len(individual_uncert_up)-1:
-	    individual_uncert_avg.append((individual_uncert_up[k]+individual_uncert_down[k])/2.)
-	else:
-	    individual_uncert_avg.append((individual_uncert_up[k]-individual_uncert_down[k])/2.)
+    for k in range(len(list_nuisnames)):
+	#if k!=0 and k!=len(list_nuisnames)-1:
+	individual_uncert_avg.append((individual_uncert_up[k]+individual_uncert_down[k])/2.)
+	#else:
+	 #   individual_uncert_avg.append((individual_uncert_up[k]-individual_uncert_down[k])/2.)
 
     individual_uncert_down_allbins.append(individual_uncert_down)
     individual_uncert_up_allbins.append(individual_uncert_up)
@@ -453,51 +481,82 @@ print 'individual_uncert_avg_allbins', individual_uncert_avg_allbins
 
 hCorr = []
 hCorrPOI = []
-fDiagnostics = []
+fCovar = []
+
+#fCovarPrefix = "./fitDiagnostics"
+fCovarPrefix = "./multidimfit"
+
+doSubtractCovar=True
+#doSubtractCovar=False
 
 #Get the correlation matrices for POI 
 for k in range(len(list_nuisnames)):
 
-    if k==0:
-	fDiagnostics.append(TFile("./fitDiagnostics.snapshot_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
-    if k>0 and k<len(list_nuisnames)-1:
-	fDiagnostics.append(TFile("./fitDiagnostics.freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
-    if k==len(list_nuisnames)-1:
-	fDiagnostics.append(TFile("./fitDiagnostics.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
-
-    hCorr.append(fDiagnostics[k].Get("covariance_fit_s").Clone())
-    #print str(k)+" "+fDiagnostics[k].GetName()
-
     hCorrPOI.append(TH2F("correlation_fit_s_POI"+list_nuisnames[k],"correlation_fit_s_POI"+list_nuisnames[k],24,0,24,24,0,24))
     #print hCorrPOI[-1].GetName()
+    #print str(k)+" "+fCovar[k].GetName()
 
-    for i in range(24):
-        for j in range(24):
-            corrval = hCorr[k].GetBinContent(hCorr[k].GetXaxis().FindBin("r_"+str(i)), hCorr[k].GetYaxis().FindBin("r_"+str(j)))
-	    #print str(k)+" "+str(i)+" "+str(j)+" "+str(corrval)
-            hCorrPOI[-1].SetBinContent(i+1,j+1,corrval)
+    if k==0:
+	fCovar.append(TFile(fCovarPrefix+".snapshot_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
+    if k>0 and k<len(list_nuisnames)-1:
+	#if list_nuisnames[k]!="hdamp":
+	fCovar.append(TFile(fCovarPrefix+".freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
+	#else:
+	#fCovar.append(TFile(fCovarPrefix+".freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+"_testToys.root"))
+    if k==len(list_nuisnames)-1:
+	fCovar.append(TFile(fCovarPrefix+".freezeall_"+observable+"_"+year+"_"+NuisanceGroup+".root"))
+
+    if fCovarPrefix == "./fitDiagnostics":
+	hCorr.append(fCovar[k].Get("covariance_fit_s").Clone())
+	for i in range(24):
+	    for j in range(24):
+		corrval = hCorr[k].GetBinContent(hCorr[k].GetXaxis().FindBin("r_"+str(i)), hCorr[k].GetYaxis().FindBin("r_"+str(j)))
+		#print str(k)+" "+str(i)+" "+str(j)+" "+str(corrval)
+		hCorrPOI[k].SetBinContent(i+1,j+1,corrval)
+
+    elif fCovarPrefix == "./multidimfit":
+	fitResult = fCovar[k].Get("fit_mdf")
+	print list_nuisnames[k]+" Minuit Covariance quality: "+str(fitResult.covQual())
+        for i in range(24):
+            for j in range(24):
+                corrval = fitResult.correlation("r_"+str(i), "r_"+str(j))
+                #print str(k)+" "+str(i)+" "+str(j)+" "+str(corrval)
+		hCorrPOI[k].SetBinContent(i+1,j+1,corrval)
 
 
 #Compute up/down covariance matrices
+doToysCovariance=False
 hCovUp = []
 hCovDown = []
 for k in range(len(list_nuisnames)):
-    hCovUp.append(TH2F("correlation_matrix_up"+list_nuisnames[k],"correlation_matrix_up"+list_nuisnames[k],24,0,24,24,0,24))
-    hCovDown.append(TH2F("correlation_matrix_down"+list_nuisnames[k],"correlation_matrix_down"+list_nuisnames[k],24,0,24,24,0,24))
-    for i in range(24):
-        for j in range(24):
-            corrval = hCorrPOI[k].GetBinContent(1+i,1+j)
-            covUpVal = corrval * total_uncert_up_allbins[i][k] * total_uncert_up_allbins[j][k] #multiply by predicted number of events in bins i and j
-            covDownVal = corrval * total_uncert_down_allbins[i][k] * total_uncert_down_allbins[j][k] #multiply by predicted number of events in bins i and j
-            print('r_'+str(i)+' r_'+str(j)+' covUpVal='+str(covUpVal)+' covDownVal='+str(covDownVal))
-            hCovUp[k].SetBinContent(1+i, 1+j, covUpVal)
-            hCovDown[k].SetBinContent(1+i, 1+j, covDownVal)
+    if (list_nuisnames[k]=="hdamp" or list_nuisnames[k]=="bkgd_norm") and year=="Comb" and doToysCovariance==True:
+	print "Open "+"covariance_fromToys_"+observable+"_"+year+"_"+NuisanceGroup+"_freeze"+list_nuisnames[k]+".root"
+    	externalFile = TFile("covariance_fromToys_"+observable+"_"+year+"_"+NuisanceGroup+"_freeze"+list_nuisnames[k]+".root")
+	#hCovUp.append(externalFile.Get("hCov_sample").Clone())
+	#hCovDown.append(externalFile.Get("hCov_sample").Clone())
+    	hCovUp.append(externalFile.Get("hCovUp_mean").Clone())
+        hCovDown.append(externalFile.Get("hCovDown_mean").Clone())
+        for i in range(24):
+            for j in range(24):
+        	print(list_nuisnames[k]+' r_'+str(i)+' r_'+str(j)+' covUpVal='+str(hCovUp[-1].GetBinContent(1+i,1+j))+' covDownVal='+str(hCovDown[-1].GetBinContent(1+i,1+j)))
+    else:
+	hCovUp.append(TH2F("correlation_matrix_up"+list_nuisnames[k],"correlation_matrix_up"+list_nuisnames[k],24,0,24,24,0,24))
+	hCovDown.append(TH2F("correlation_matrix_down"+list_nuisnames[k],"correlation_matrix_down"+list_nuisnames[k],24,0,24,24,0,24))
+	for i in range(24):
+	    for j in range(24):
+		corrval = hCorrPOI[k].GetBinContent(1+i,1+j)
+		covUpVal = corrval * total_uncert_up_allbins[i][k] * total_uncert_up_allbins[j][k] #multiply by predicted number of events in bins i and j
+		covDownVal = corrval * total_uncert_down_allbins[i][k] * total_uncert_down_allbins[j][k] #multiply by predicted number of events in bins i and j
+		print(list_nuisnames[k]+' r_'+str(i)+' r_'+str(j)+' corrVal='+str(corrval)+' covUpVal='+str(covUpVal)+' covDownVal='+str(covDownVal))
+		hCovUp[k].SetBinContent(1+i, 1+j, covUpVal)
+		hCovDown[k].SetBinContent(1+i, 1+j, covDownVal)
 
 
 #Substract covariance matrices to total covariance matrix
 hCovSubtractedUp = [] 
 hCovSubtractedDown = []
 for k in range(len(list_nuisnames)):
+    print str(list_nuisnames[k])
     if k==0 or k==len(list_nuisnames)-1:
 	hCovSubtractedUp.append(hCovUp[k].Clone())
         hCovSubtractedDown.append(hCovDown[k].Clone()) 
@@ -507,8 +566,11 @@ for k in range(len(list_nuisnames)):
     for i in range(24):
 	for j in range (24):
 	    if k!=0 and k!=len(list_nuisnames)-1:
-	        hCovSubtractedUp[k].SetBinContent(1+i,1+j,hCovUp[0].GetBinContent(1+i,1+j)-hCovUp[k].GetBinContent(1+i,1+j))
-                hCovSubtractedDown[k].SetBinContent(1+i,1+j,hCovDown[0].GetBinContent(1+i,1+j)-hCovDown[k].GetBinContent(1+i,1+j))
+		rho = 0
+		#if list_nuisnames[k]=="hdamp" or list_nuisnames[k]=="bkgd_norm" or list_nuisnames[k]=="theory":
+		#rho = 0.01
+	        hCovSubtractedUp[k].SetBinContent(1+i,1+j,hCovUp[0].GetBinContent(1+i,1+j)-hCovUp[k].GetBinContent(1+i,1+j)-rho*math.sqrt(hCovUp[0].GetBinContent(1+i,1+j)*hCovUp[k].GetBinContent(1+i,1+j)))
+                hCovSubtractedDown[k].SetBinContent(1+i,1+j,hCovDown[0].GetBinContent(1+i,1+j)-hCovDown[k].GetBinContent(1+i,1+j)-rho*math.sqrt(hCovDown[0].GetBinContent(1+i,1+j)*hCovDown[k].GetBinContent(1+i,1+j)))
 
     #plot2Dmatrix(hCovSubtracted[k], observable+"_CorrelationMatrix_"+list_nuisnames[k]+"_"+year, False)
 
@@ -552,8 +614,12 @@ for k in range(len(list_nuisnames)):
         for j in range(24):
             matrix_Jacobian[i][j] = hJacobian.GetBinContent(1+i, 1+j)
             matrix_JacobianTranspose[i][j] = hJacobian.GetBinContent(1+j, 1+i)
-            matrix_CovUp[i][j] = hCovSubtractedUp[k].GetBinContent(1+i, 1+j)
-            matrix_CovDown[i][j] = hCovSubtractedDown[k].GetBinContent(1+i, 1+j)
+	    if doSubtractCovar==True:
+                matrix_CovUp[i][j] = hCovSubtractedUp[k].GetBinContent(1+i, 1+j)
+                matrix_CovDown[i][j] = hCovSubtractedDown[k].GetBinContent(1+i, 1+j)
+	    elif doSubtractCovar==False:
+		matrix_CovUp[i][j] = hCovUp[k].GetBinContent(1+i, 1+j)
+		matrix_CovDown[i][j] = hCovDown[k].GetBinContent(1+i, 1+j)
     matrix_CovNormUp = matrix_Jacobian.dot(matrix_CovUp).dot(matrix_JacobianTranspose)
     matrix_CovNormDown = matrix_Jacobian.dot(matrix_CovDown).dot(matrix_JacobianTranspose)
 
@@ -562,14 +628,34 @@ for k in range(len(list_nuisnames)):
     mu_norm_down = []
     for i in range(24):
         mu_norm.append(ttbar_yield[i]/mu_avg)
-        if (matrix_CovNormUp[i][i]>0): 
-	    mu_norm_up.append(math.sqrt(matrix_CovNormUp[i][i]))
-	else:
-	    mu_norm_up.append(0.)
-	if (matrix_CovNormDown[i][i]>0):
-            mu_norm_down.append(math.sqrt(matrix_CovNormDown[i][i]))
-	else:
-	    mu_norm_down.append(0.)
+	if doSubtractCovar==True:
+	    if (matrix_CovNormUp[i][i]>0): 
+		mu_norm_up.append(math.sqrt(matrix_CovNormUp[i][i]))
+	    else:
+		mu_norm_up.append(0.)
+	    if (matrix_CovNormDown[i][i]>0):
+		mu_norm_down.append(math.sqrt(matrix_CovNormDown[i][i]))
+	    else:
+		mu_norm_down.append(0.)
+	elif doSubtractCovar==False:
+	    if k==0 or k==len(individual_uncert_up)-1:
+		if (matrix_CovNormUp[i][i]>0):
+		    mu_norm_up.append(math.sqrt(matrix_CovNormUp[i][i]))
+		else:
+		    mu_norm_up.append(0.)
+		if (matrix_CovNormDown[i][i]>0):
+		    mu_norm_down.append(math.sqrt(matrix_CovNormDown[i][i]))
+		else:
+		    mu_norm_down.append(0.)
+	    else:
+		if (mu_norm_up_eachNuis[0][i]*mu_norm_up_eachNuis[0][i]-matrix_CovNormUp[i][i]>0):
+		    mu_norm_up.append(math.sqrt(mu_norm_up_eachNuis[0][i]*mu_norm_up_eachNuis[0][i]-matrix_CovNormDown[i][i]))
+		else:
+		    mu_norm_up.append(0.)
+		if (mu_norm_down_eachNuis[0][i]*mu_norm_down_eachNuis[0][i]-matrix_CovNormUp[i][i]>0):
+		    mu_norm_down.append(math.sqrt(mu_norm_down_eachNuis[0][i]*mu_norm_down_eachNuis[0][i]-matrix_CovNormDown[i][i]))
+		else:
+		    mu_norm_down.append(0.)
         print('Normalized differential cross section, bin '+str(i)+' mu_norm='+str(mu_norm[i])+' +'+str(mu_norm_up[i])+' -'+str(mu_norm_down[i]))
     mu_norm_eachNuis.append(mu_norm)
     mu_norm_up_eachNuis.append(mu_norm_up)
@@ -583,10 +669,10 @@ for i in range(24):
     for k in range(len(list_nuisnames)):
         mu_norm_eachBin.append(mu_norm_eachNuis[k][i])
         mu_norm_up_eachBin.append(mu_norm_up_eachNuis[k][i])
-	if k==0 or k==len(individual_uncert_up)-1:
-            mu_norm_down_eachBin.append(-mu_norm_down_eachNuis[k][i])
-        if k!=0 and k!=len(individual_uncert_up)-1:
-	    mu_norm_down_eachBin.append(mu_norm_down_eachNuis[k][i])
+	#if k==0 or k==len(individual_uncert_up)-1:
+        #    mu_norm_down_eachBin.append(-mu_norm_down_eachNuis[k][i])
+        #if k!=0 and k!=len(individual_uncert_up)-1:
+	mu_norm_down_eachBin.append(mu_norm_down_eachNuis[k][i])
     individual_uncert_up_allbins_norm.append(mu_norm_up_eachBin)
     individual_uncert_down_allbins_norm.append(mu_norm_down_eachBin)
 
@@ -594,143 +680,128 @@ for i in range(24):
 ## Plotting
 ###################
 
-doNormBreakDown = True
+def plotUncerainties(doNormBreakDown):
+    nbin = 0
+    min_bin = 0
+    max_bin = 0
 
-nbin = 0
-min_bin = 0
-max_bin = 0
+    #legend_coordinates = [0.7, 0.8, 0.87, 0.87]
+    #TH1.SetDefaultSumw2(1)
+    signal_integral = 0
+    background_integral_i = []
+    background_integral = 0
+    data_integral = 0
+    syst_up_integral = 0
+    syst_down_integral = 0
+    canvas = TCanvas('differential measurment','differential measurment', 1000, 800)
+    canvas.UseCurrentStyle()
 
-#legend_coordinates = [0.7, 0.8, 0.87, 0.87]
-#TH1.SetDefaultSumw2(1)
-signal_integral = 0
-background_integral_i = []
-background_integral = 0
-data_integral = 0
-syst_up_integral = 0
-syst_down_integral = 0
-canvas = TCanvas('differential measurment','differential measurment', 1000, 800)
-canvas.UseCurrentStyle()
+    pad = TPad("pad","pad",0,0,1,1)
+    pad.SetLeftMargin(0.14)
+    #pad.SetBottomMargin(0.2)
+    pad.SetRightMargin(0.245)
+    pad.Draw()
+    pad.cd()
 
-pad = TPad("pad","pad",0,0,1,1)
-pad.SetLeftMargin(0.14)
-#pad.SetBottomMargin(0.2)
-pad.SetRightMargin(0.245)
-pad.Draw()
-pad.cd()
+    h_uncert = []
+    h_uncertUp = []
+    h_uncertDown = []
 
-def linearized(input, option):
-    opt = 0
-    if option=='up' :
-        opt = 2
-    elif option=='down' :
-        opt = 1
-    else:
-        print 'error option'
-    foo = []
-    for l in input:
-        foo.append(l[opt])
-    return foo
+    uncert_bin = []
+    uncert_binUp = []
+    uncert_binDown = []
 
-def squared(list_value):
-    somme = 0
-    for l in list_value:
-        somme += l*l
-    return np.sqrt(somme/float(len(list_value)))
-
-
-h_uncert = []
-h_uncertUp = []
-h_uncertDown = []
-
-uncert_bin = []
-uncert_binUp = []
-uncert_binDown = []
-
-for k in range(len(list_nuisnames)):
-    h = TH1F(list_nuisnames[k], list_nuisnames[k], 24, 0, 24)
-    hUp = TH1F(list_nuisnames[k]+'Up', list_nuisnames[k]+'Up', 24, 0, 24)
-    hDown = TH1F(list_nuisnames[k]+'Down', list_nuisnames[k]+'Down', 24, 0, 24)
-    #for j in range(1):
-    for j in range(ntimebin):
-        #uncert_bin = individual_uncert_avg_allbins[j]
-	if doNormBreakDown==False:
-	    uncert_binUp = individual_uncert_up_allbins[j]
-	    uncert_binDown = individual_uncert_down_allbins[j]
-	if doNormBreakDown==True:
-            uncert_binUp = individual_uncert_up_allbins_norm[j]
-            uncert_binDown = individual_uncert_down_allbins_norm[j]
-	#h.Fill(j+0.5, 100*uncert_bin[k])
-	hUp.Fill(j+0.5, 100*uncert_binUp[k])
-        if k!=0 and k!=len(individual_uncert_up)-1: 
+    for k in range(len(list_nuisnames)):
+	h = TH1F(list_nuisnames[k], list_nuisnames[k], 24, 0, 24)
+	hUp = TH1F(list_nuisnames[k]+'Up', list_nuisnames[k]+'Up', 24, 0, 24)
+	hDown = TH1F(list_nuisnames[k]+'Down', list_nuisnames[k]+'Down', 24, 0, 24)
+	#for j in range(1):
+	for j in range(ntimebin):
+	    #uncert_bin = individual_uncert_avg_allbins[j]
+	    if doNormBreakDown==False:
+		uncert_binUp = individual_uncert_up_allbins[j]
+		uncert_binDown = individual_uncert_down_allbins[j]
+	    if doNormBreakDown==True:
+		uncert_binUp = individual_uncert_up_allbins_norm[j]
+		uncert_binDown = individual_uncert_down_allbins_norm[j]
+	    #h.Fill(j+0.5, 100*uncert_bin[k])
+	    hUp.Fill(j+0.5, 100*uncert_binUp[k])
+	    #if k!=0 and k!=len(individual_uncert_up)-1: 
 	    hDown.Fill(j+0.5, -100*uncert_binDown[k])
-	else:
-	    hDown.Fill(j+0.5, 100*uncert_binDown[k])
-    #h_uncert.append(h)
-    h_uncertUp.append(hUp)
-    h_uncertDown.append(hDown)
+	    #else:
+	#	hDown.Fill(j+0.5, 100*uncert_binDown[k])
+	#h_uncert.append(h)
+	h_uncertUp.append(hUp)
+	h_uncertDown.append(hDown)
 
 
-def getcolor(c):
-   d = c
-   if c==3:
-	d = 820
-   if c==5:
-        d = 800
-   if c==8:
-	d = 807
-   if c==9:
-	d = 823
-   if c==10:
-	d = 880
-   return d
+    def getcolor(c):
+       d = c
+       if c==3:
+	    d = 820
+       if c==5:
+	    d = 800
+       if c==8:
+	    d = 807
+       if c==9:
+	    d = 823
+       if c==10:
+	    d = 880
+       return d
 
-plotYmin=-5.0
-plotYmax=5.0
+    plotYmin=-5.0
+    plotYmax=5.0
 
-if nuisancegroup=="exp_breakdown":
-    plotYmin=-2.0
-    plotYmax=2.0
-if nuisancegroup=="theory_breakdown":
-    plotYmin=-1.0
-    plotYmax=1.0
+    if nuisancegroup=="exp_breakdown":
+	plotYmin=-2.0
+	plotYmax=2.0
+    if nuisancegroup=="theory_breakdown":
+	plotYmin=-1.0
+	plotYmax=1.0
 
-for k in range(len(list_nuisnames)):
-	#h_uncert[k].SetLineColor(getcolor(k+1))
-        #h_uncert[k].SetLineWidth(2)
-        h_uncertUp[k].SetLineColor(getcolor(k+1))
-        h_uncertUp[k].SetLineWidth(2)
-        h_uncertDown[k].SetLineColor(getcolor(k+1))
-        h_uncertDown[k].SetLineWidth(2)
-	if k==0:
-	    h_uncertUp[k].SetMinimum(plotYmin)
-            h_uncertUp[k].SetMaximum(plotYmax)
-            h_uncertUp[k].SetYTitle("Uncertainty (%)")
-            h_uncertUp[k].SetXTitle("sidereal time (h)");
-            h_uncertUp[k].GetYaxis().SetTitleOffset(1.1)
-	    h_uncertUp[k].Draw("HIST")
-            h_uncertDown[k].Draw("HISTsame")
-	    #h_uncert[k].SetMinimum(0.)
-	    #h_uncert[k].SetMaximum(0.06)
-	    #h_uncert[k].SetYTitle("Uncertainty (%)")
-	    #h_uncert[k].SetXTitle("sidereal time (h)");
-	    #h_uncert[k].Draw("HIST")
-	else: 
-	    #h_uncert[k].Draw("HISTsame")
-	    h_uncertUp[k].Draw("HISTsame")
-	    h_uncertDown[k].Draw("HISTsame")
+    for k in range(len(list_nuisnames)):
+	    #h_uncert[k].SetLineColor(getcolor(k+1))
+	    #h_uncert[k].SetLineWidth(2)
+	    h_uncertUp[k].SetLineColor(getcolor(k+1))
+	    h_uncertUp[k].SetLineWidth(2)
+	    h_uncertDown[k].SetLineColor(getcolor(k+1))
+	    h_uncertDown[k].SetLineWidth(2)
+	    if k==0:
+		h_uncertUp[k].SetMinimum(plotYmin)
+		h_uncertUp[k].SetMaximum(plotYmax)
+		h_uncertUp[k].SetYTitle("Uncertainty (%)")
+		h_uncertUp[k].SetXTitle("sidereal time (h)");
+		h_uncertUp[k].GetYaxis().SetTitleOffset(1.1)
+		h_uncertUp[k].Draw("HIST")
+		h_uncertDown[k].Draw("HISTsame")
+		#h_uncert[k].SetMinimum(0.)
+		#h_uncert[k].SetMaximum(0.06)
+		#h_uncert[k].SetYTitle("Uncertainty (%)")
+		#h_uncert[k].SetXTitle("sidereal time (h)");
+		#h_uncert[k].Draw("HIST")
+	    else: 
+		#h_uncert[k].Draw("HISTsame")
+		h_uncertUp[k].Draw("HISTsame")
+		h_uncertDown[k].Draw("HISTsame")
 
-legend = TLegend(0.76,0.94,0.998,0.94-len(list_nuisnames)*0.035)
-#legend.SetHeader('Asimov '+' '+year, 'C')
-legend.SetTextSize(0.03)
-for k in range(len(list_nuisnames)):
-    legend.AddEntry(h_uncertUp[k].GetName(), list_nuisnames[k], 'l')
-legend.Draw()
-legend.Draw("SAME")
+    legend = TLegend(0.76,0.94,0.998,0.94-len(list_nuisnames)*0.035)
+    #legend.SetHeader('Asimov '+' '+year, 'C')
+    legend.SetTextSize(0.03)
+    for k in range(len(list_nuisnames)):
+	legend.AddEntry(h_uncertUp[k].GetName(), list_nuisnames[k], 'l')
+    legend.Draw()
+    legend.Draw("SAME")
 
-resultname = './impacts/'+year+'/'+observable+'_differential_'+nuisancegroup+'_'+year+'_algosingles'
-if doNormBreakDown==True:
-    resultname += '_norm'
-canvas.SaveAs(resultname+'.pdf')
+    resultname = './impacts/'+year+'/'+observable+'_differential_'+nuisancegroup+'_'+year+'_algosingles'
+    if doNormBreakDown==True:
+	resultname += '_norm'
+    canvas.SaveAs(resultname+'.pdf')
+ 
+    #raw_input()
+
+plotUncerainties(False)
+plotUncerainties(True)
+
 
 #raw_input()
 #exit()
