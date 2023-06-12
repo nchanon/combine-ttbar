@@ -7,6 +7,7 @@ do
     for asim in asimov data
     do
 	sbatch scripts/slurm_SingleWilsonFit.py n_bjets ${year} ${asim}
+        sbatch scripts/slurm_OthersFloatingWilsonFit.py n_bjets ${year} ${asim}
 	sbatch scripts/slurm_MultipleWilsonFit.py n_bjets ${year} ${asim}
 
     done

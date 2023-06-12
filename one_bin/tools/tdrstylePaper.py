@@ -44,7 +44,7 @@ def cmsPrel(lumi,  energy=None,  simOnly=True,  onLeft=True,  sp=0, textScale=1.
   latex.SetTextFont(42)
     
   #lumyloc = 0.965 #Changed for paper v4
-  lumyloc = 0.95
+  lumyloc = 0.93
   #cmsyloc = 0.893
   #simyloc = 0.858
   cmsyloc = lumyloc

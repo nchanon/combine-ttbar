@@ -12,7 +12,7 @@ from tools.norm_xs_utils import *
 
 from ROOT import TFile, TH1, TCanvas, TH1F, TH2F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
-from ROOT import TGraphAsymmErrors
+from ROOT import TGraphAsymmErrors, TColor, gROOT
 
 #import print_options
 #print_options.set_float_precision(4)
@@ -46,8 +46,11 @@ nuisancegroup = args.nuisancegroup
 ntimebin = 24
 
 pois = []
-for i in range(24):
-    pois.append('r_'+str(i))
+#for i in range(24):
+#    pois.append('r_'+str(i))
+pois.append("r_avg")
+for i in range(23):
+    pois.append('f_'+str(i))
 
 r_range='0.5,2.0'
 
@@ -213,6 +216,7 @@ if NuisanceGroup=="exp_elec_muon_pu_btag_jec_trigger_prefiring":
     list_nuisnames.append('trigger')
     list_legendnames.append('Electron')
     list_legendnames.append('Muon')
+    list_legendnames.append('Pileup')
     list_legendnames.append('B tagging')
     list_legendnames.append('Jet energy scale')
     list_legendnames.append('ECAL prefiring')
@@ -238,6 +242,7 @@ if NuisanceGroup=="theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco":
     list_legendnames.append('Top p_{T}')
     list_legendnames.append('Top mass')
     list_legendnames.append('Parton shower')
+    list_legendnames.append('QCD scales')    
     list_legendnames.append('Pdf + #alpha_{s}')
     list_legendnames.append('ME-PS matching')
     list_legendnames.append('UE tune')
@@ -290,21 +295,21 @@ doFloatPOI = '1'
 #cmd1 += ' --algo grid --points '+str(npoints)+' '
 
 #Nominal fit + snaphsot
-cmd2 = 'combine -M MultiDimFit -n .snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov #+' --robustFit 1 '
+cmd2 = 'combine -M MultiDimFit -n .snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit' #+' --robustFit 1 '
 cmd2 += optim
-cmd2 += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace.root '
+cmd2 += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace_norm.root '
 cmd2 += asi
 #cmd2 += '--parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range+' --floatOtherPOIs='+doFloatPOI
 cmd2 += ' --algo=singles  --saveWorkspace --saveFitResult'
 
-cmd2_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '
+cmd2_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit.MultiDimFit.mH120.root '
 cmd2_fd += optim
 cmd2_fd += asi
 cmd2_fd += ' --plots '
-cmd2_fd += ' -n .snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov
+cmd2_fd += ' -n .snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit'
 
 #Stat. uncertainty only + snaphsot
-cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root -n .freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+' '
+cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit.MultiDimFit.mH120.root -n .freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit '
 cmd3 += optim
 cmd3 += asi
 #cmd3 += '--parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range+' --floatOtherPOIs='+doFloatPOI
@@ -312,16 +317,16 @@ cmd3 += asi
 cmd3 += '--freezeParameters allConstrainedNuisances --snapshotName MultiDimFit'
 cmd3 += ' --algo=singles  --saveWorkspace --saveFitResult'
 
-cmd3_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '
+cmd3_fd = 'combineTool.py -M FitDiagnostics ./higgsCombine.freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit.MultiDimFit.mH120.root '
 cmd3_fd += optim
 cmd3_fd += asi
 cmd3_fd += ' --plots '
-cmd3_fd += ' -n .freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov
+cmd3_fd += ' -n .freezeall_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit '
 
 #Fit removing group uncertainties + snapshots
 cmd4 = []
 for k in range(len(list_nuisgroups)):
-    cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root -n .freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+' '
+    cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit.MultiDimFit.mH120.root -n .freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit '
     cmd_k += optim
     cmd_k += asi
     #cmd_k += '--parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range+' --floatOtherPOIs='+doFloatPOI
@@ -335,11 +340,11 @@ for k in range(len(list_nuisgroups)):
 
 cmd4_fd = []
 for k in range(len(list_nuisgroups)):
-    cmd_fd_k = 'combineTool.py -M FitDiagnostics ./higgsCombine.freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '
+    cmd_fd_k = 'combineTool.py -M FitDiagnostics ./higgsCombine.freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit.MultiDimFit.mH120.root '
     cmd_fd_k += optim
     cmd_fd_k += asi
     cmd_fd_k += ' --plots '
-    cmd_fd_k += ' -n .freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+' '   
+    cmd_fd_k += ' -n .freeze'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+NuisanceGroup+'_'+asimov+'_normfit '   
     cmd4_fd.append(cmd_fd_k)
 
 #Plotting likelihood scan
@@ -406,6 +411,9 @@ total_uncert_down_allbins = []
 individual_uncert_up_allbins = []
 individual_uncert_down_allbins = []
 individual_uncert_avg_allbins = []
+individual_uncert_up_allbins_norm = []
+individual_uncert_down_allbins_norm = []
+individual_uncert_avg_allbins_norm = []
 
 wordnum_down = []
 wordnum_up = []
@@ -415,88 +423,243 @@ for k in range(2+len(list_nuisgroups)):
 
 list_nuisnames.insert(0, 'stat+syst')
 list_nuisnames.append('stat')
-list_legendnames.insert(0, 'Stat.+Syst.')
+list_legendnames.insert(0, 'Stat.+syst.')
 list_legendnames.append('Stat.')
 
 rate_total = []
 rate_syst = []
 rate_stat = []
 
-tree_map = []
+#tree_map = []
+#for i in range(ntimebin):
+#    tree_map.append(0)
+tree_map_fractions = []
 for i in range(ntimebin):
-    tree_map.append(0)
+    tree_map_fractions.append(0)
+tree_map_r_avg = 0
 
-#for j in range(1):
-for j in range(ntimebin):
-    rbin = pois[j]
+hJacobian = TH2F("hJacobian","hJacobian",24,0,24,24,0,24)
+for i in range(24):
+    for j in range(24):
+        if i==0 and j==0:
+            hJacobian.SetBinContent(1+i,1+j,0)
+        elif i==j and i>0:
+            hJacobian.SetBinContent(1+i,1+j,1)
+        elif (i==0 and j>0):
+            hJacobian.SetBinContent(1+i,1+j,-1)
+        elif (j==0 and i>0):
+            hJacobian.SetBinContent(1+i,1+j,0)
+        else:
+            hJacobian.SetBinContent(1+i,1+j,0) #0 or -1?
 
-    #file = open('impacts/'+year+'/'+observable+'_uncertainty_breakdown_detailed_'+rbin+'_'+NuisanceGroup+'.log')
+mu_norm_eachNuis = []
+mu_norm_up_eachNuis = []
+mu_norm_down_eachNuis = []
 
-    value_central = []
-    total_uncert_up = []
-    total_uncert_down = []
+for k in range(len(list_nuisnames)):
+
+    if k==0:
+	filein = TFile("./higgsCombine.snapshot_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+	file_covar = TFile("./multidimfit.snapshot_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.root")
+    if k>0 and k<len(list_nuisnames)-1:
+	filein = TFile("./higgsCombine.freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+	file_covar = TFile("./multidimfit.freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.root")
+    if k==len(list_nuisnames)-1:
+	filein = TFile("./higgsCombine.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+	file_covar = TFile("./multidimfit.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.root")
+
+    print filein.GetName()
+    print file_covar.GetName()
+
+    tree = filein.Get("limit")
+
+    fractions_value_central = []
+    fractions_uncert_up = []
+    fractions_uncert_down = []
+    r_avg = 0
+    r_avg_uncert_down = 0
+    r_avg_uncert_up = 0
+
+    hCorrPOI = TH2F("hCorrPOI","hCorrPOI",24,0,24,24,0,24)
+    hCovPOI_Up = TH2F("hCovPOI_Up","hCovPOI_Up",24,0,24,24,0,24)
+    hCovPOI_Down = TH2F("hCovPOI_Down","hCovPOI_Down",24,0,24,24,0,24)
+    #hJacobian = TH2F("hJacobian","hJacobian",24,0,24,24,0,24)
+
+    #for j in range(1):
+    for j in range(ntimebin):
+
+	print 'k='+str(k)+' j='+str(j)
+
+	#rbin = pois[j]
+	fbin = "f_"+str(j)
+
+	#file = open('impacts/'+year+'/'+observable+'_uncertainty_breakdown_detailed_'+rbin+'_'+NuisanceGroup+'.log')
+
+	#value_central = []
+	#total_uncert_up = []
+	#total_uncert_down = []
+	#individual_uncert_up = []
+	#individual_uncert_down = []
+	#individual_uncert_avg = []
+	#fractions_value_central = []
+
+
+    #for k in range(1):
+    #for k in range(len(list_nuisnames)):
+
+    #	if k==0:
+    #	    filein = TFile("./higgsCombine.snapshot_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+    #	if k>0 and k<len(list_nuisnames)-1:
+    #	    filein = TFile("./higgsCombine.freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+    #	if k==len(list_nuisnames)-1:
+    #	    filein = TFile("./higgsCombine.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+"_normfit.MultiDimFit.mH120.root")
+
+    #    tree = filein.Get("limit")
+
+	if j==0 and k==0:
+	    ib = 0
+	    for b in tree.GetListOfBranches():
+		if b.GetName().find("f_")!=-1:
+		    num = int(b.GetName()[2:])
+		    tree_map_fractions[num] = ib
+		    print b.GetName() + ' ' + str(num) + ' ' + str(ib)
+		    ib += 1
+		elif b.GetName().find("r_avg")!=-1:
+		    tree_map_r_avg = ib
+		    ib += 1
+	    print tree_map_fractions
+	    print 'Map r_avg: '+str(tree_map_r_avg)
+	#    ib=0
+	#    for b in tree.GetListOfBranches():
+	#	if b.GetName().find("r_")!=-1:
+	#	    num = int(b.GetName()[2:])
+	#	    tree_map[num] = ib
+	#	    print b.GetName() + ' ' + str(num)
+	#	    ib += 1
+
+	#tree.GetEvent(0)
+	#value_central.append(tree.GetLeaf(rbin).GetValue())
+	#tree.GetEvent(1+2*tree_map[j])
+	#unc_down = tree.GetLeaf(rbin).GetValue()
+        #tree.GetEvent(1+2*tree_map[j]+1)
+	#unc_up = tree.GetLeaf(rbin).GetValue()
+	#total_uncert_up.append(unc_up-value_central[-1])
+	#total_uncert_down.append(abs(unc_down-value_central[-1]))
+
+	if j!=23:
+	    tree.GetEvent(0)
+	    fractions_value_central.append(tree.GetLeaf(fbin).GetValue())
+	    tree.GetEvent(1+2*tree_map_fractions[j])
+	    unc_down = tree.GetLeaf(fbin).GetValue()
+	    tree.GetEvent(1+2*tree_map_fractions[j]+1)
+	    unc_up = tree.GetLeaf(fbin).GetValue()
+	    fractions_uncert_up.append(unc_up-fractions_value_central[-1])
+	    fractions_uncert_down.append(abs(unc_down-fractions_value_central[-1]))
+	elif j==23:
+	    tree.GetEvent(0)
+	    r_avg = tree.GetLeaf("r_avg").GetValue()
+	    tree.GetEvent(1+2*tree_map_r_avg)
+	    unc_down = tree.GetLeaf("r_avg").GetValue()
+	    tree.GetEvent(1+2*tree_map_r_avg+1)
+	    unc_up = tree.GetLeaf("r_avg").GetValue()
+	    r_avg_uncert_up = unc_up-r_avg
+	    r_avg_uncert_down = abs(unc_down-r_avg)
+
+	    f_23 = 24-sum(fractions_value_central)
+	    fractions_value_central.append(f_23)
+	    fitResult = file_covar.Get("fit_mdf")
+	    for i in range(24):
+		for l in range(24):
+		    corrval = fitResult.correlation(pois[i], pois[l])
+		    hCorrPOI.SetBinContent(i+1,l+1,corrval)
+		    iunc = i-1
+		    lunc = l-1
+		    cov_up = 0
+		    cov_down = 0
+		    if i>0 and l>0:
+			iunc = i-1
+			lunc = l-1
+			cov_up = corrval * fractions_uncert_up[iunc] * fractions_uncert_up[lunc]
+			cov_down = corrval * fractions_uncert_down[iunc] * fractions_uncert_down[lunc]
+		    if i==0 and l>0:
+			cov_up = corrval * r_avg_uncert_up * fractions_uncert_up[lunc]
+			cov_down = corrval * r_avg_uncert_down * fractions_uncert_down[lunc]
+		    if i>0 and l==0:
+			cov_up = corrval * r_avg_uncert_up * fractions_uncert_up[iunc]
+			cov_down = corrval * r_avg_uncert_down * fractions_uncert_down[iunc]
+		    if i==0 and l==0:
+			cov_up = corrval * r_avg_uncert_up * r_avg_uncert_up
+			cov_down = corrval * r_avg_uncert_down * r_avg_uncert_down
+		    hCovPOI_Up.SetBinContent(i+1,l+1,cov_up)
+		    hCovPOI_Down.SetBinContent(i+1,l+1,cov_down)
+
+    filein.Close()
+
+    matrix_Jacobian = np.zeros((ntimebin,ntimebin))
+    matrix_JacobianTranspose = np.zeros((ntimebin,ntimebin))
+    matrix_CovUp = np.zeros((ntimebin,ntimebin))
+    matrix_CovDown = np.zeros((ntimebin,ntimebin))
+
+    for i in range(24):
+	for j in range(24):
+	    matrix_Jacobian[i][j] = hJacobian.GetBinContent(1+i, 1+j)
+	    matrix_JacobianTranspose[i][j] = hJacobian.GetBinContent(1+j, 1+i)
+	    matrix_CovUp[i][j] = hCovPOI_Up.GetBinContent(1+i, 1+j)
+	    matrix_CovDown[i][j] = hCovPOI_Down.GetBinContent(1+i, 1+j)
+
+    matrix_CovNormUp = matrix_Jacobian.dot(matrix_CovUp).dot(matrix_JacobianTranspose)
+    matrix_CovNormDown = matrix_Jacobian.dot(matrix_CovDown).dot(matrix_JacobianTranspose)
+
+    mu_norm = []
+    mu_norm_up = []
+    mu_norm_down = []
+    for i in range(24):
+	mu_norm.append(fractions_value_central[i])
+	if i<23:
+	    mu_norm_up.append(math.sqrt(matrix_CovNormUp[i+1][i+1]))
+	    mu_norm_down.append(math.sqrt(matrix_CovNormDown[i+1][i+1]))
+	if i==23:
+	    mu_norm_up.append(math.sqrt(matrix_CovNormUp[0][0]))
+	    mu_norm_down.append(math.sqrt(matrix_CovNormDown[0][0]))
+
+        print('Normalized differential cross section, bin '+str(i)+' mu_norm='+str(mu_norm[i])+' +'+str(mu_norm_up[i])+' -'+str(mu_norm_down[i]))
+
+    mu_norm_eachNuis.append(mu_norm)
+    mu_norm_up_eachNuis.append(mu_norm_up)
+    mu_norm_down_eachNuis.append(mu_norm_down)
+
+for i in range(24):
+    mu_norm_eachBin = []
+    mu_norm_up_eachBin = []
+    mu_norm_down_eachBin = []
+    for k in range(len(list_nuisnames)):
+        mu_norm_eachBin.append(mu_norm_eachNuis[k][i])
+        mu_norm_up_eachBin.append(mu_norm_up_eachNuis[k][i])
+        mu_norm_down_eachBin.append(mu_norm_down_eachNuis[k][i])
+	#value_central_allbins.append((mu_norm_eachNuis[k][i])
+	#total_uncert_up_allbins.append(mu_norm_up_eachNuis[k][i])
+	#total_uncert_down_allbins.append(mu_norm_down_eachNuis[k][i])
+
+    value_central_allbins.append(mu_norm_eachBin)
+    total_uncert_up_allbins.append(mu_norm_up_eachBin)
+    total_uncert_down_allbins.append(mu_norm_down_eachBin)
+
     individual_uncert_up = []
     individual_uncert_down = []
     individual_uncert_avg = []
-
-    #for k in range(1):
-    for k in range(len(list_nuisnames)):
-
-	if k==0:
-	    filein = TFile("./higgsCombine.snapshot_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+".MultiDimFit.mH120.root")
-	if k>0 and k<len(list_nuisnames)-1:
-	    filein = TFile("./higgsCombine.freeze"+list_nuisnames[k]+"_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+".MultiDimFit.mH120.root")
-	if k==len(list_nuisnames)-1:
-	    filein = TFile("./higgsCombine.freezeall_"+observable+"_"+year+"_"+NuisanceGroup+"_"+asimov+".MultiDimFit.mH120.root")
-
-        tree = filein.Get("limit")
-
-	if j==0 and k==0:
-	    ib=0
-	    for b in tree.GetListOfBranches():
-		if b.GetName().find("r_")!=-1:
-		    num = int(b.GetName()[2:])
-		    tree_map[num] = ib
-		    print b.GetName() + ' ' + str(num)
-		    ib += 1
-
-	tree.GetEvent(0)
-	value_central.append(tree.GetLeaf(rbin).GetValue())
-
-	#for l in range(ntimebin): 
-	tree.GetEvent(1+2*tree_map[j])
-	unc_down = tree.GetLeaf(rbin).GetValue()
-        tree.GetEvent(1+2*tree_map[j]+1)
-	unc_up = tree.GetLeaf(rbin).GetValue()
-	    #val = tree.GetLeaf(rbin).GetValue()
-	    #if (val<1):
-	        #unc_down = val
-	    #if (val>1):
-		#unc_up = val
-	#val = 1
-	total_uncert_up.append(unc_up-value_central[-1])
-	total_uncert_down.append(abs(unc_down-value_central[-1]))
-	#individual_uncert_up.append(unc_up-1)
-        #individual_uncert_down.append(unc_down-1)
-
-	#print 'j='+str(j)+' '+rbin+' mu='+str(val)+' mu_up='+str(unc_up)+' mu_down='+str(unc_down) 
-	filein.Close()
-
-    value_central_allbins.append(value_central)
-    total_uncert_up_allbins.append(total_uncert_up)
-    total_uncert_down_allbins.append(total_uncert_down)
+    fractions_value_central = []
 
     for k in range(len(list_nuisnames)):
 	if k==0 or k==len(list_nuisnames)-1:
-	    individual_uncert_down.append(total_uncert_down[k])
-	    individual_uncert_up.append(total_uncert_up[k])
+	    individual_uncert_down.append(total_uncert_down_allbins[i][k])
+	    individual_uncert_up.append(total_uncert_up_allbins[i][k])
 	if k!=0 and k!=len(list_nuisnames)-1:
-	    if (total_uncert_down[0]*total_uncert_down[0]-total_uncert_down[k]*total_uncert_down[k]>0):
-		individual_uncert_down.append(math.sqrt(total_uncert_down[0]*total_uncert_down[0]-total_uncert_down[k]*total_uncert_down[k]))
+	    if (total_uncert_down_allbins[i][0]*total_uncert_down_allbins[i][0]-total_uncert_down_allbins[i][k]*total_uncert_down_allbins[i][k]>0):
+		individual_uncert_down.append(math.sqrt(total_uncert_down_allbins[i][0]*total_uncert_down_allbins[i][0]-total_uncert_down_allbins[i][k]*total_uncert_down_allbins[i][k]))
 	    else:
 		individual_uncert_down.append(0)
-            if (total_uncert_up[0]*total_uncert_up[0]-total_uncert_up[k]*total_uncert_up[k]>0):
-		individual_uncert_up.append(math.sqrt(total_uncert_up[0]*total_uncert_up[0]-total_uncert_up[k]*total_uncert_up[k]))
+            if (total_uncert_up_allbins[i][0]*total_uncert_up_allbins[i][0]-total_uncert_up_allbins[i][k]*total_uncert_up_allbins[i][k]>0):
+		individual_uncert_up.append(math.sqrt(total_uncert_up_allbins[i][0]*total_uncert_up_allbins[i][0]-total_uncert_up_allbins[i][k]*total_uncert_up_allbins[i][k]))
 	    else:
 		individual_uncert_up.append(0)
 
@@ -506,14 +669,14 @@ for j in range(ntimebin):
 	#else:
 	 #   individual_uncert_avg.append((individual_uncert_up[k]-individual_uncert_down[k])/2.)
 
-    individual_uncert_down_allbins.append(individual_uncert_down)
-    individual_uncert_up_allbins.append(individual_uncert_up)
-    individual_uncert_avg_allbins.append(individual_uncert_avg)
+    individual_uncert_down_allbins_norm.append(individual_uncert_down)
+    individual_uncert_up_allbins_norm.append(individual_uncert_up)
+    individual_uncert_avg_allbins_norm.append(individual_uncert_avg)
 
 print 'value_central_allbins', value_central_allbins
-print 'individual_uncert_down_allbins', individual_uncert_down_allbins
-print 'individual_uncert_up_allbins', individual_uncert_up_allbins
-print 'individual_uncert_avg_allbins', individual_uncert_avg_allbins
+print 'individual_uncert_down_allbins_norm', individual_uncert_down_allbins_norm
+print 'individual_uncert_up_allbins_norm', individual_uncert_up_allbins_norm
+print 'individual_uncert_avg_allbins_norm', individual_uncert_avg_allbins_norm
 
 #compareSignalStrengthLists(value_central_allbins)
 
@@ -528,7 +691,7 @@ print 'individual_uncert_avg_allbins', individual_uncert_avg_allbins
 
 #exit()
 
-
+'''
 #######################################
 ## Get covariance matrices and jacobian
 #######################################
@@ -742,7 +905,7 @@ for i in range(24):
 	mu_norm_down_eachBin.append(mu_norm_down_eachNuis[k][i])
     individual_uncert_up_allbins_norm.append(mu_norm_up_eachBin)
     individual_uncert_down_allbins_norm.append(mu_norm_down_eachBin)
-
+'''
 ###################
 ## Plotting
 ###################
@@ -760,13 +923,19 @@ def plotUncerainties(doNormBreakDown):
     data_integral = 0
     syst_up_integral = 0
     syst_down_integral = 0
-    canvas = TCanvas('differential measurment','differential measurment', 1000, 800)
+    canvas = TCanvas('differential measurment','differential measurment', 800, 700) #1000, 800
     canvas.UseCurrentStyle()
 
     pad = TPad("pad","pad",0,0,1,1)
     pad.SetLeftMargin(0.14)
     #pad.SetBottomMargin(0.2)
-    pad.SetRightMargin(0.245)
+    #pad.SetRightMargin(0.245)
+
+    tm = gStyle.GetPadTopMargin()
+    print 'TopMargin: '+str(tm)+' -> '+str(1.5*tm)
+    gStyle.SetPadTopMargin(1.5*tm)
+    pad.SetTopMargin(1.5*tm)
+
     pad.Draw()
     pad.cd()
 
@@ -816,12 +985,53 @@ def plotUncerainties(doNormBreakDown):
 	    d = 880
        return d
 
+    def getdiffcolor(c):
+	if c==1:
+	     ci = c
+	else:
+	     color = gROOT.GetColor(c)
+	     ci = c #TColor.GetFreeColorIndex()
+	if nuisancegroup=="timeNew_breakdown":
+	     #color = getcolor(c)
+	     color = gROOT.GetColor(c)
+             if c==2:
+                color.SetRGB(215/255.,25/255.,28/255.)
+             if c==3:
+                color.SetRGB(171/255.,221/255.,164/255.)
+             if c==4:
+                color.SetRGB(43/255.,131/255.,186/255.)
+             if c==5:
+                color.SetRGB(253/255.,174/255.,97/255.)
+	if nuisancegroup=="kind_breakdown":
+	     if c==2:
+		color.SetRGB(228/255.,26/255.,28/255.)
+	     if c==3:
+		color.SetRGB(55/255.,126/255.,184/255.)
+	     if c==4:
+                color.SetRGB(77/255.,175/255.,74/255.)
+             if c==5:
+                color.SetRGB(152/255.,78/255.,163/255.)
+             if c==6:
+                color.SetRGB(255/255.,127/255.,0)
+             if c==7:
+                color.SetRGB(255/255.,255/255.,51/255.)
+	return ci
+
     plotYmin=-5.0
     plotYmax=5.0
+    #if (len(list_nuisnames)>5):	
 
+    if nuisancegroup=="timeNew_breakdown":
+        plotYmin=-4.5
+        plotYmax=5.5
+    if nuisancegroup=="kind_breakdown":
+        plotYmin=-4.0
+        plotYmax=6.0
     if nuisancegroup=="exp_breakdown":
-	plotYmin=-2.0
-	plotYmax=2.0
+	#plotYmin=-2.0
+	#plotYmax=2.0
+        plotYmin=-3.0
+        plotYmax=7.0
     if nuisancegroup=="theory_breakdown":
 	plotYmin=-1.0
 	plotYmax=1.0
@@ -829,16 +1039,24 @@ def plotUncerainties(doNormBreakDown):
     for k in range(len(list_nuisnames)):
 	    #h_uncert[k].SetLineColor(getcolor(k+1))
 	    #h_uncert[k].SetLineWidth(2)
-	    h_uncertUp[k].SetLineColor(getcolor(k+1))
+	    h_uncertUp[k].SetLineColor(getdiffcolor(k+1)) 
 	    h_uncertUp[k].SetLineWidth(2)
-	    h_uncertDown[k].SetLineColor(getcolor(k+1))
+	    h_uncertDown[k].SetLineColor(getdiffcolor(k+1))
 	    h_uncertDown[k].SetLineWidth(2)
 	    if k==0:
 		h_uncertUp[k].SetMinimum(plotYmin)
 		h_uncertUp[k].SetMaximum(plotYmax)
-		h_uncertUp[k].SetYTitle("Uncertainty (%)")
-		h_uncertUp[k].SetXTitle("sidereal time (h)");
-		h_uncertUp[k].GetYaxis().SetTitleOffset(1.1)
+		h_uncertUp[k].SetYTitle("Uncertainty on 1/(#sigma_{t#bar{t}}/24) d#sigma_{t#bar{t}}/dt (%)")
+		#h_uncertUp[k].SetYTitle("Uncertainty (%)")
+		h_uncertUp[k].SetXTitle("Sidereal time (h)");
+		h_uncertUp[k].GetYaxis().SetTitleOffset(1.0)
+	 	h_uncertUp[k].GetYaxis().SetTitleSize(0.05)
+                h_uncertUp[k].GetYaxis().SetLabelSize(0.05)
+		h_uncertUp[k].GetYaxis().CenterTitle()
+                h_uncertUp[k].GetXaxis().SetTitleOffset(1.0)
+		h_uncertUp[k].GetXaxis().SetTitleSize(0.05)
+                h_uncertUp[k].GetXaxis().SetLabelSize(0.05)
+		h_uncertUp[k].GetXaxis().CenterTitle()
 		h_uncertUp[k].Draw("HIST")
 		h_uncertDown[k].Draw("HISTsame")
 		#h_uncert[k].SetMinimum(0.)
@@ -851,9 +1069,10 @@ def plotUncerainties(doNormBreakDown):
 		h_uncertUp[k].Draw("HISTsame")
 		h_uncertDown[k].Draw("HISTsame")
 
-    legend = TLegend(0.76,0.94,0.998,0.94-len(list_nuisnames)*0.035)
+    legend = TLegend(0.62,0.9,0.87,0.90-len(list_nuisnames)*0.035)#0.035
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.04)
     #legend.SetHeader('Asimov '+' '+year, 'C')
-    legend.SetTextSize(0.03)
     for k in range(len(list_nuisnames)):
 	legend.AddEntry(h_uncertUp[k].GetName(), list_legendnames[k], 'l')
     legend.Draw()
@@ -863,22 +1082,24 @@ def plotUncerainties(doNormBreakDown):
         sim=True
     else:
         sim=False
+
+
     if(year=='2016'):
         tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
     elif(year=='2017'):
         tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
     elif(year=='Comb'):
-        tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=True)
+        tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=False)
 
     resultname = './impacts/'+year+'/'+observable+'_differential_'+nuisancegroup+'_'+year+'_algosingles'
     if doNormBreakDown==True:
-	resultname += '_norm'
+	resultname += '_normfit'
     resultname += '_' + asimov
     canvas.SaveAs(resultname+'.pdf')
  
     #raw_input()
 
-plotUncerainties(False)
+#plotUncerainties(False)
 plotUncerainties(True)
 
 

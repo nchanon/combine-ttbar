@@ -16,8 +16,8 @@ from ROOT import TGraphAsymmErrors
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
 
-#doPlotsOnly = True
-doPlotsOnly = False
+doPlotsOnly = True
+#doPlotsOnly = False
 
 ###################
 ## Initialisation
@@ -40,8 +40,6 @@ nuisancegroup = args.nuisancegroup
 
 
 NuisanceGroup = ""
-if nuisancegroup=='timeNew_breakdown':
-    NuisanceGroup = "time_flat_uncorr_corr"
 if nuisancegroup=='time_breakdown':
     NuisanceGroup = "time_flat_uncorr_corr_mcstat"
 if nuisancegroup=='kind_breakdown':
@@ -64,7 +62,6 @@ if nuisancegroup=='smedecay_breakdown':
 
 list_nuisgroups=[]
 list_nuisnames=[]
-list_legendnames=[]
 
 #Grouping by kind of nuisances
 nuis_lumi_time_flat = 'rgx{lumi_flat_uncor_.*},lumi_flat_cor'
@@ -85,7 +82,7 @@ nuis_theory_uetune = 'CP5'
 nuis_theory_colorreco = 'erdOn,GluonMove,QCDinspired'
 
 nuis_jec_uncorr = 'rgx{Absolute.*},rgx{BBEC1.*},rgx{RelativeBal.*},rgx{RelativeSample.*}'
-nuis_exp_time_flat = 'FlavorPureGluon_jec,FlavorPureBottom_jec,rgx{.*SF_phasespace}' #added phase-space here on 17/01/2023
+nuis_exp_time_flat = 'FlavorPureGluon_jec,FlavorPureBottom_jec'
 nuis_exp_time_corr = 'rgx{.*trig_syst.*},rgx{.*syst_pu}'
 nuis_exp_time_uncorr = 'rgx{.*trig_stat.*},rgx{syst_elec_reco.*},rgx{syst_elec_id.*},rgx{.*muon_iso.*},rgx{.*muon_id.*},rgx{syst_b_correlated.*},rgx{syst_b_uncorrelated.*},rgx{syst_l_correlated.*},rgx{syst_l_uncorrelated.*},rgx{syst_prefiring.*},'+nuis_jec_uncorr  #rgx{.*jec.*}''
 nuis_exp = nuis_exp_time_flat+','+nuis_exp_time_corr+','+nuis_exp_time_uncorr
@@ -109,18 +106,6 @@ nuis_sme_singletop = 'rgx{sme_decay.*}'
 
 nuis_time_flat = nuis_lumi_time_flat+','+nuis_bkgdnorm+','+nuis_theory+','+nuis_exp_time_flat
 nuis_time_corr = nuis_lumi_time_corr+','+nuis_exp_time_corr+','+nuis_sme_singletop
-nuis_time_corr_withMCstat = nuis_lumi_time_corr+','+nuis_exp_time_corr+','+nuis_sme_singletop+','+nuis_mcstat
-
-if NuisanceGroup=="time_flat_uncorr_corr":
-    list_nuisgroups.append(nuis_time_flat)
-    list_nuisgroups.append(nuis_time_corr_withMCstat)
-    list_nuisgroups.append(nuis_exp_time_uncorr)
-    list_nuisnames.append('time_flat')
-    list_nuisnames.append('time_correlated')
-    list_nuisnames.append('time_uncorrelated')
-    list_legendnames.append('Time uniform')
-    list_legendnames.append('Time correlated')
-    list_legendnames.append('Time uncorrelated')
 
 if NuisanceGroup=="time_flat_uncorr_corr_mcstat":
     list_nuisgroups.append(nuis_time_flat)
@@ -131,10 +116,6 @@ if NuisanceGroup=="time_flat_uncorr_corr_mcstat":
     list_nuisnames.append('time_correlated')
     list_nuisnames.append('time_uncorrelated')
     list_nuisnames.append('mc_stat')
-    list_legendnames.append('Time uniform')
-    list_legendnames.append('Time correlated')
-    list_legendnames.append('Time uncorrelated')
-    list_legendnames.append('MC Stat.')
 
 if NuisanceGroup=="exp_theory_bkgdnorm_lumi_mcstat":
     list_nuisgroups.append(nuis_exp)
@@ -147,11 +128,6 @@ if NuisanceGroup=="exp_theory_bkgdnorm_lumi_mcstat":
     list_nuisnames.append('bkgd_norm')
     list_nuisnames.append('lumi')
     list_nuisnames.append('mc_stat')
-    list_legendnames.append('Experimental')
-    list_legendnames.append('Theory')
-    list_legendnames.append('Background norm')
-    list_legendnames.append('Luminosity')
-    list_legendnames.append('MC Stat.')
 
 if NuisanceGroup=="exp_elec_muon_pu_btag_jec_trigger_prefiring":
     list_nuisgroups.append(nuis_exp_elec)
@@ -168,13 +144,6 @@ if NuisanceGroup=="exp_elec_muon_pu_btag_jec_trigger_prefiring":
     list_nuisnames.append('jec')
     list_nuisnames.append('prefiring')
     list_nuisnames.append('trigger')
-    list_legendnames.append('Electron')
-    list_legendnames.append('Muon')
-    list_legendnames.append('Pileup')
-    list_legendnames.append('B tagging')
-    list_legendnames.append('Jet energy scale')
-    list_legendnames.append('ECAL prefiring')
-    list_legendnames.append('Trigger')
 
 if NuisanceGroup=="theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco":
     list_nuisgroups.append(nuis_theory_pttop)
@@ -193,14 +162,6 @@ if NuisanceGroup=="theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco":
     list_nuisnames.append('hdamp')
     list_nuisnames.append('ue_tune')
     list_nuisnames.append('color_reco')
-    list_legendnames.append('Top p_{T}')
-    list_legendnames.append('Top mass')
-    list_legendnames.append('Parton shower')
-    list_legendnames.append('QCD scale')
-    list_legendnames.append('Pdf + #alpha_{s}')
-    list_legendnames.append('ME-PS matching')
-    list_legendnames.append('UE tune')
-    list_legendnames.append('Color reconnection')
 
 if NuisanceGroup=="pu_trigger":
     list_nuisgroups.append(nuis_exp_pu)
@@ -218,9 +179,6 @@ if NuisanceGroup=="pu_trigger_smedecay":
     list_nuisnames.append('pu_time')
     list_nuisnames.append('trig_noNvtx')
     list_nuisnames.append('sme_decay')
-    list_legendnames.append('Pileup uniform')
-    list_legendnames.append('Trigger full')
-    list_legendnames.append('SME single top')
 
 if NuisanceGroup=="smedecay":
     list_nuisgroups.append(nuis_sme_singletop_XX)
@@ -231,10 +189,6 @@ if NuisanceGroup=="smedecay":
     list_nuisnames.append('sme_decay_XY')
     list_nuisnames.append('sme_decay_XZ')
     list_nuisnames.append('sme_decay_YZ')
-    list_legendnames.append('SME single top XX')
-    list_legendnames.append('SME single top XY')
-    list_legendnames.append('SME single top XZ')
-    list_legendnames.append('SME single top YZ')
 
 
 
@@ -292,11 +246,18 @@ def getwilsontext(wilson):
 optim = ' --cminDefaultMinimizerStrategy 0 '
 npoints=10
 
+doMultipleFit = False
+
 if wilson_=='sme_all':
     wilson_list_all = ['cLXX','cLXY','cLXZ','cLYZ','cRXX','cRXY','cRXZ','cRYZ','cXX','cXY','cXZ','cYZ','dXX','dXY','dXZ','dYZ']
     #wilson_list_all = ['cLXX','cLXY','cLXZ','cLYZ','cRXX','cRXY','cRXZ','cRYZ']
-else:
-    wilson_list_all = [wilson_] #for testing
+else if len(wilson_.split(","))==1:
+    wilson_list_all = [wilson_] #for testing or parallel running
+    wilsonserie = wilson_
+else if len(wilson_.split(","))==4:
+    wilson_list_all = wilson_.split(",")
+    doMultipleFit = True
+    wilsonserie = wilson_.replace(",","_")
 
 print 'Uncertainty breakdown '+NuisanceGroup+', wilson: '
 print wilson_list_all
@@ -393,8 +354,6 @@ for k in range(2+len(list_nuisgroups)):
 
 list_nuisnames.insert(0, 'stat+syst')
 list_nuisnames.append('stat')
-list_legendnames.insert(0, 'Stat.+Syst.')
-list_legendnames.append('Stat.')
 
 rate_total = []
 rate_syst = []
@@ -539,12 +498,12 @@ for k in range(len(list_nuisnames)):
             h_uncertUp[k].SetMaximum(plotYmax)
             h_uncertUp[k].SetYTitle("Uncertainty on Wilson coefficient")
             #h_uncertUp[k].SetXTitle("Wilson")
+	    #h_uncertUp[k].GetXaxis().LabelsOption("v")
 	    h_uncertUp[k].GetXaxis().SetLabelSize(0.04)
 	    for j in range(len(wilson_list_all)):
 	        h_uncertUp[k].GetXaxis().SetBinLabel(1+j,getwilsontext(wilson_list_all[j]))
-		#h_uncertUp[k].GetXaxis().ChangeLabel(1+j,15,-1,0)
-	    h_uncertUp[k].GetXaxis().LabelsOption("v")
-            h_uncertUp[k].GetYaxis().SetTitleOffset(1.)
+
+            h_uncertUp[k].GetYaxis().SetTitleOffset(1.1)
             h_uncertUp[k].Draw("HIST")
             h_uncertDown[k].Draw("HISTsame")
         else:
@@ -554,20 +513,9 @@ for k in range(len(list_nuisnames)):
 legend = TLegend(0.76,0.94,0.998,0.94-len(list_nuisnames)*0.035)
 legend.SetTextSize(0.03)
 for k in range(len(list_nuisnames)):
-    legend.AddEntry(h_uncertUp[k].GetName(), list_legendnames[k], 'l')
+    legend.AddEntry(h_uncertUp[k].GetName(), list_nuisnames[k], 'l')
 legend.Draw()
 legend.Draw("SAME")
-
-if asimov=='asimov':
-    sim=True
-else:
-    sim=False
-if(year=='2016'):
-    tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
-elif(year=='2017'):
-    tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
-elif(year=='Comb'):
-    tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=True)
 
 resultname = './impacts/'+year+'/'+asimov+'/'+observable+'_smefit_'+nuisancegroup+'_'+year
 #if (asimov=='injectiontest'):

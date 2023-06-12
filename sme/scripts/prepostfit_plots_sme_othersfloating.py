@@ -3,7 +3,7 @@ import argparse
 
 sys.path.append('./')
 
-from ROOT import TFile, TH1, TH2, TCanvas, TH1F, THStack, TString
+from ROOT import TFile, TH1, TH2, TCanvas, TH1F, TH2F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
 from ROOT import TGraphAsymmErrors
 from ROOT import TStyle, gStyle, TColor, TLatex
@@ -31,43 +31,75 @@ parser.add_argument('title', help='display your observable title')
 args = parser.parse_args()
 observable = args.observable
 year = args.year
-wilson = args.wilson
+wilson = args.wilson #should be something like cLXX_cLXY_cLXZ_cLYZ
 asimov = args.asimov
 title = args.title
 
-pois = []
-for i in range(24):
-    pois.append('r_'+str(i))
 
-asi = ' --setParameterRanges '+wilson+'=-30,30 ' #range OK for single fits
+#should check if wilson belongs for instance to cLXX_cLXY_cLXZ_cLYZ
+wilson_list_all = [
+    'cLXX_cLXY_cLXZ_cLYZ',
+    'cRXX_cRXY_cRXZ_cRYZ',
+    'cXX_cXY_cXZ_cYZ',
+    'dXX_dXY_dXZ_dYZ'
+]
+for w4 in wilson_list_all:
+    if w4.find(wilson)!=-1:
+	wilsonserie = w4
+
+
+#pois = []
+#for i in range(24):
+#    pois.append('r_'+str(i))
+
+
+#asi = ' --setParameterRanges '+wilson+'=-30,30 ' #range OK for single fits
+
+def asimov_param(wlist):
+    asi = ' --setParameters '
+    for w in wlist:
+	if asimov=='injectiontest' and w==wilson:
+	    asi += w+'=1'
+	else:
+            asi += w+'=0'
+        if w!=wlist[-1]:
+            asi += ','
+    asi += ' --setParameterRanges '
+    for w in wlist:
+        if w[-2:]=='XX' or w[-2:]=='XY':
+            wrange='30'
+        if w[-2:]=='XZ' or w[-2:]=='YZ':
+            wrange='100'
+        asi += w+'=-'+wrange+','+wrange
+        #asi += w+'=-100,100'
+        if w!=wlist[-1]:
+            asi += ':'
+    if asimov == 'asimov' or asimov=='injectiontest':
+        asi += ' -t -1'
+    return asi
+
+wilson_list_all = [
+    'cLXX_cLXY_cLXZ_cLYZ',
+    'cRXX_cRXY_cRXZ_cRYZ',
+    'cXX_cXY_cXZ_cYZ',
+    'dXX_dXY_dXZ_dYZ'
+]
+
+wilson_list = wilson_list_all
+
 sasimov=''
 if asimov == 'asimov':
     #asi += '--expectSignal 0  -t -1 '
-    asi  += '--setParameters '+wilson+'=0 -t -1 '
+    #asi  += '--setParameters '+wilson+'=0 -t -1 '
     sasimov = '_asimov'
 elif asimov == 'injectiontest':
-    asi  += '--setParameters '+wilson+'=1 -t -1 '
+    #asi  += '--setParameters '+wilson+'=1 -t -1 '
     sasimov = '_injectiontest'
 else:
-    asi  += '--setParameters '+wilson+'=0 '
     sasimov = '_data'
 
-
-#doPrePostFitOnly = True
-doPrePostFitOnly = False
-
-
-#fitkind = 'prefit'
-#fitkind = 'fit_s'
-
-#if (fitkind=='prefit'):
-#    sfitkind = "Pre-fit"
-#else:
-#    sfitkind = "Post-fit"
-
-#rbin='r'
-#r_range='0.8,1.2'
-#npoints=20
+doFit = True
+#doFit = False
 
 ###################
 ## FitDiagnostics
@@ -80,314 +112,210 @@ print '-------------------------'
 optim = ' --cminDefaultMinimizerStrategy 0 '
 #optim = ' --robustFit 1 '
 
-if (doPrePostFitOnly==False):
+if (doFit==True):
 
     if (asimov=='asimov' or asimov=='injectiontest'):
-        finput = './inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root'
+        finput = './inputs/'+observable+'_'+wilsonserie+'_workspace_'+year+'.root'
     else:
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+wilson+'_'+asimov
+	cmd2 = 'combine -M MultiDimFit --algo=singles -n .othersfloating_snapshot_'+year+'_'+wilsonserie+'_'+asimov
+        #cmd2 = 'combine -M MultiDimFit --algo=cross --cl=0.68 -n .cross_snapshot_'+year+'_'+wilson+'_'+asimov
 	cmd2 += optim
-        cmd2 += ' -d inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root '
-        cmd2 += asi #asimov_param(asimov)
+        cmd2 += ' -d inputs/'+observable+'_'+wilsonserie+'_workspace_'+year+'.root '
+        cmd2 += asimov_param(wilsonserie.split("_")) #asimov_param(asimov)
         cmd2 += ' --saveWorkspace'
     	os.system(cmd2)
-    	finput = "higgsCombine.snapshot_"+year+"_"+wilson+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
+    	finput = "higgsCombine.othersfloating_snapshot_"+year+"_"+wilsonserie+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
-    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+optim
-    cmd5 += ' --saveShapes --saveWithUncertainties '
-    cmd5 += '-n .prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
+    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 ' + asimov_param(wilsonserie.split("_")) + optim
+    cmd5 += ' --saveShapes --saveWithUncertainties --plots '
+    cmd5 += '-n .othersfloating_prefit_'+observable+'_'+year+'_'+wilsonserie+'_'+asimov
     #cmd5 += ' --skipBOnlyFit --plots'
     print cmd5
     os.system(cmd5)
 
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
 
-
-fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root',"READ")
+fDiagnostics = TFile('fitDiagnostics.othersfloating_prefit_'+observable+'_'+year+'_'+wilsonserie+'_'+asimov+'.root',"READ")
 
 ###################
 ## Nuisances checks
 ###################
 
-tolerance = 0.05
+def makeNuisancePulls(wilson_choice):
+    #wilson_choice = wilson
+    #wilson_choice = wilson.split("_")[0]
+    tolerance = 0.05
+    #tolerance = -0.5
 
-cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '+wilson+' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log'
-print cmd6
-os.system(cmd6)
+    cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '+wilson_choice
+    if tolerance!=0:
+      cmd6 +=' --vtol '+str(tolerance)
+    cmd6 +=' -g Nuisances.prefit_'+observable+'_'+year+'_'+wilsonserie+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson_choice+'_'+asimov+'_othersfloating.log'
+    print cmd6
+    os.system(cmd6)
 
-syst_list = []
-syst_pull = []
-syst_uncert = []
+    syst_list = []
+    syst_pull = []
+    syst_uncert = []
 
-file = open('diffNuisances_prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log')
+    file = open('diffNuisances_prefit_'+observable+'_'+year+'_'+wilson_choice+'_'+asimov+'_othersfloating.log')
 
-'''
-iline=0
-for line in file:
-    j = 0
-    isHighlighted = False
-    for word in line.split():
-        #print(str(iline)+' j='+str(j)+' '+word)
-	if iline>0 and j==0: 
-	    syst_list.append(word)
-	if iline>0 and j==1 and word=='!':
-	    isHighlighted = True
-	if iline>0 and j==4 and isHighlighted==False:
-	    syst_uncert.append(float(word))
-	if iline>0 and j==6 and isHighlighted==True:
-            syst_uncert.append(float(word[:-1]))
-	j += 1
-    iline += 1
+    iline=0
+    for line in file:
+	j = 0
+	isHighlightedFirst = False
+	isHighlightedSecond = False
+	isHighlightedBoth = False
+	for word in line.split():
+	    print(str(iline)+' j='+str(j)+' '+word)
+	    if iline>3:
+		if j==0:
+		    syst_list.append(word)
+		if j==1 and word=='!':
+		    isHighlightedFirst = True
+		if j==3 and word=='!' and isHighlightedFirst==False:
+		    isHighlightedSecond = True
+		if j==4 and word=='!' and isHighlightedFirst==True:
+		    isHighlightedSecond = True
 
-iline=0
-for line in file:
-    j = 0
-    isHighlightedFirst = False
-    isHighlightedSecond = False
-    for word in line.split():
-        #print(str(iline)+' j='+str(j)+' '+word)
-        if iline>3:
-            if iline>2 and j==0:
-                syst_list.append(word)
-            if iline>2 and j==1 and word=='!':
-                isHighlightedFirst = True
-            if iline>2 and j==3 and word=='!':
-                isHighlightedSecond = True
-            if iline>2 and j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
-                syst_uncert.append(float(word))
-            if iline>2 and j==5 and isHighlightedSecond==True:
-                syst_uncert.append(float(word[:-1]))
-            if iline>2 and j==6 and isHighlightedFirst==True:
-                syst_uncert.append(float(word[:-1]))
+		if (isHighlightedFirst==False and isHighlightedSecond==False):
+		    if j==3: syst_pull.append(float(word[:-1]))
+		    if j==4: syst_uncert.append(float(word))
 
-        j += 1
-    iline += 1
-'''
+		if (isHighlightedFirst==True and isHighlightedSecond==False):
+		    if j==4: syst_pull.append(float(word[:-1]))
+		    if j==5: syst_uncert.append(float(word))
 
-iline=0
-for line in file:
-    j = 0
-    isHighlightedFirst = False
-    isHighlightedSecond = False
-    isHighlightedBoth = False
-    for word in line.split():
-        print(str(iline)+' j='+str(j)+' '+word)
-        if iline>3:
-            if j==0:
-                syst_list.append(word)
-            if j==1 and word=='!':
-                isHighlightedFirst = True
-            if j==3 and word=='!' and isHighlightedFirst==False:
-                isHighlightedSecond = True
-	    if j==4 and word=='!' and isHighlightedFirst==True:
-		isHighlightedSecond = True
+		if (isHighlightedFirst==False and isHighlightedSecond==True):
+		    if j==4: syst_pull.append(float(word[:-1]))
+		    if j==5: syst_uncert.append(float(word[:-1]))
+	       
+		if (isHighlightedFirst==True and isHighlightedSecond==True):
+		    if j==5: syst_pull.append(float(word[:-1]))
+		    if j==6: syst_uncert.append(float(word[:-1]))
 
-	    if (isHighlightedFirst==False and isHighlightedSecond==False):
-		if j==3: syst_pull.append(float(word[:-1]))
-		if j==4: syst_uncert.append(float(word))
+	    j += 1
+	iline += 1
 
-            if (isHighlightedFirst==True and isHighlightedSecond==False):
-                if j==4: syst_pull.append(float(word[:-1]))
-                if j==5: syst_uncert.append(float(word))
+    print str(len(syst_list))+ ' ' + str(len(syst_uncert))
 
-            if (isHighlightedFirst==False and isHighlightedSecond==True):
-                if j==4: syst_pull.append(float(word[:-1]))
-                if j==5: syst_uncert.append(float(word[:-1]))
-	   
-	    if (isHighlightedFirst==True and isHighlightedSecond==True):
-                if j==5: syst_pull.append(float(word[:-1]))
-                if j==6: syst_uncert.append(float(word[:-1]))
- 
+    print syst_list
+    print syst_uncert
 
-            #if j==3 and isHighlightedFirst==False and isHighlightedSecond==False:
-            #    syst_pull.append(float(word[:-1]))
-            #if j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
-            #    syst_uncert.append(float(word))
-            #if j==4 and isHighlightedSecond==True:
-            #    syst_pull.append(float(word[:-1]))
-            #if j==5 and isHighlightedSecond==True:
-            #    syst_uncert.append(float(word[:-1]))
-            #if j==5 and isHighlightedFirst==True:
-            #    syst_pull.append(float(word[:-1]))
-            #if j==6 and isHighlightedFirst==True:
-            #    syst_uncert.append(float(word[:-1]))
+    syst_uncert_new = []
+    syst_list_new = []
+    syst_pull_new = []
 
-        j += 1
-    iline += 1
+    if asimov=='asimov' or asimov=='injectiontest' or asimov=='data':
 
-print str(len(syst_list))+ ' ' + str(len(syst_uncert))
+	for i in range(len(syst_uncert)):
+	    if tolerance==0 or (tolerance!=0 and syst_uncert[i]<1-tolerance):
+		syst_uncert_new.append(syst_uncert[i])
+		syst_list_new.append(syst_list[i])
+		syst_pull_new.append(syst_pull[i])
 
-print syst_list
-print syst_uncert
-
-syst_uncert_new = []
-syst_list_new = []
-syst_pull_new = []
-
-if asimov=='asimov' or asimov=='injectiontest' or asimov=='data':
-
-    for i in range(len(syst_uncert)):
-	if syst_uncert[i]<0.95:
-	    syst_uncert_new.append(syst_uncert[i])
-	    syst_list_new.append(syst_list[i])
-            syst_pull_new.append(syst_pull[i])
-
-    #syst_list.clear()
-    #syst_list = syst_list_new
-    #syst_uncert.clear()
-    #syst_uncer = syst_uncert_new
-    print str(len(syst_list_new))+ ' ' + str(len(syst_uncert_new))
-else:
-    syst_list_new = syst_list
-    syst_uncert_new = syst_uncert
-    syst_pull_new = syst_pull
-    print str(len(syst_list_new))+ ' ' +str(len(syst_uncert_new))
-
-
-syst_triple_list = []
-for isyst in range(len(syst_list_new)):
-    syst_triple_list.append([syst_list_new[isyst],syst_pull_new[isyst],syst_uncert_new[isyst]])
-
-syst_triple_list.sort(key=lambda row: row[0])
-
-nSystMax = 100
-nPlots = 1 + len(syst_triple_list) / nSystMax
-print "nSyst="+str(len(syst_triple_list))+" nPlots="+str(nPlots)
-nSystPerPlot = []
-for j in range(nPlots):
-    if j!=nPlots-1 or (j==nPlots-1 and len(syst_triple_list) % nPlots == 0):
-        nSystPerPlot.append(len(syst_triple_list)/nPlots)
-    elif j==nPlots-1 and len(syst_triple_list) % nPlots == 1:
-	nSystPerPlot.append(len(syst_triple_list)/nPlots+1)
-
-knuis=0
-syst_triple_list_splitted = []
-for j in range(nPlots):
-    syst_triple_list_splitted_tmp = []
-    for k in range(nSystPerPlot[j]):
-        #for k in range(len(syst_triple_list)):
-        syst_triple_list_splitted_tmp.append(syst_triple_list[knuis])
-        print str(j)+" k="+str(k)+" "+syst_triple_list[knuis][0]
-	knuis = knuis + 1
-    syst_triple_list_splitted.append(syst_triple_list_splitted_tmp)
-
-for j in range(nPlots):
-
-    canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
-    pad = TPad("pad","pad",0,0,1,1)
-    pad.SetLeftMargin(0.06)
-    pad.SetBottomMargin(0.45)
-    pad.Draw()
-    pad.cd()
-
-    #nNuis = len(syst_list_new)
-    nNuis = nSystPerPlot[j]
-    hist_nuis_up = TH1F("hist_nuis_up","hist_nuis_up",nNuis,0,nNuis)
-    hist_nuis_down = TH1F("hist_nuis_down","hist_nuis_down",nNuis,0,nNuis)
-    hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",nNuis,0,nNuis)
-
-    minhist=-1.2
-    maxhist=1.2
-    for i in range(nNuis):
-        hist_nuis_up.SetBinContent(1+i,1)
-        hist_nuis_up.GetXaxis().SetBinLabel(1+i,syst_triple_list_splitted[j][i][0])
-        hist_nuis_down.SetBinContent(1+i,-1)
-        if (syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]<minhist):
-            minhist = syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]
-        if (syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]>maxhist):
-            maxhist = syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]
-        hist_nuis_pulled.SetBinContent(1+i,syst_triple_list_splitted[j][i][1])
-        hist_nuis_pulled.SetBinError(1+i,syst_triple_list_splitted[j][i][2])
-        #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
-        #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
-        #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
-
-    if asimov=='asimov' or asimov=='injectiontest':
-        hist_nuis_up.SetMinimum(0)
-        hist_nuis_up.SetMaximum(1.2)
+	print str(len(syst_list_new))+ ' ' + str(len(syst_uncert_new))
     else:
-        hist_nuis_up.SetMinimum(minhist-0.05)
-        hist_nuis_up.SetMaximum(maxhist+0.05)
-        hist_nuis_down.SetLineStyle(2)
-    #hist_nuis.SetMaximum(1.2)
-    hist_nuis_up.GetYaxis().SetTitleOffset(0.4)
-    hist_nuis_up.SetYTitle("Pull")
-    hist_nuis_up.SetLineStyle(2)
-    hist_nuis_up.GetXaxis().LabelsOption("v")
-    hist_nuis_up.GetXaxis().SetLabelSize(0.05)
-    hist_nuis_up.Draw()
-    if asimov!='asimov' and asimov!='injectiontest':
-        hist_nuis_down.Draw("SAME")
-    hist_nuis_pulled.Draw("ESAME")
-
-    latex = TLatex()
-    latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
-    latex.SetNDC()
-    latex.DrawLatex(0.25,0.9,year+' '+wilson+'  '+asimov)
-
-    canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'_'+str(j)+'.pdf')
+	syst_list_new = syst_list
+	syst_uncert_new = syst_uncert
+	syst_pull_new = syst_pull
+	print str(len(syst_list_new))+ ' ' +str(len(syst_uncert_new))
 
 
-'''
-canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
-pad = TPad("pad","pad",0,0,1,1)
-pad.SetLeftMargin(0.06)
-pad.SetBottomMargin(0.45)
-pad.Draw()
-pad.cd()
+    syst_triple_list = []
+    for isyst in range(len(syst_list_new)):
+	syst_triple_list.append([syst_list_new[isyst],syst_pull_new[isyst],syst_uncert_new[isyst]])
 
-hist_nuis = TH1F("hist_nuis","hist_nuis",len(syst_list_new),0,len(syst_list_new))
-hist_nuis_down = TH1F("hist_nuis_down","hist_nuis_down",len(syst_list_new),0,len(syst_list_new))
-hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",len(syst_list_new),0,len(syst_list_new))
+    syst_triple_list.sort(key=lambda row: row[0])
 
-minhist=-1.2
-maxhist=1.2
+    nSystMax = 100
+    nPlots = 1 + len(syst_triple_list) / nSystMax
+    print "nSyst="+str(len(syst_triple_list))+" nPlots="+str(nPlots)
+    nSystPerPlot = []
+    for j in range(nPlots):
+	if j!=nPlots-1 or (j==nPlots-1 and len(syst_triple_list) % nPlots == 0):
+	    nSystPerPlot.append(len(syst_triple_list)/nPlots)
+	elif j==nPlots-1 and len(syst_triple_list) % nPlots == 1:
+	    nSystPerPlot.append(len(syst_triple_list)/nPlots+1)
+	else:
+	    nSystPerPlot.append(len(syst_triple_list)/nPlots+(len(syst_triple_list) % nPlots))
+	    print str(len(syst_triple_list) % nPlots)
+	    print 'Plot with undefined number of syst'
 
-for i in range(len(syst_list_new)):
-    hist_nuis.SetBinContent(1+i,1)
-    hist_nuis.GetXaxis().SetBinLabel(1+i,syst_triple_list[i][0])
-    hist_nuis_down.SetBinContent(1+i,-1)
-    if (syst_triple_list[i][1]-syst_triple_list[i][2]<minhist):
-        minhist = syst_triple_list[i][1]-syst_triple_list[i][2]
-    if (syst_triple_list[i][1]+syst_triple_list[i][2]>maxhist):
-        maxhist = syst_triple_list[i][1]+syst_triple_list[i][2]
-    hist_nuis_pulled.SetBinContent(1+i,syst_triple_list[i][1])
-    hist_nuis_pulled.SetBinError(1+i,syst_triple_list[i][2])
-    #hist_nuis.SetBinContent(1+i,1)
-    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_double_list[i][0])
-    #hist_nuis_pulled.SetBinError(1+i,syst_double_list[i][1])
-    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
-    #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
-    #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
-    #hist_nuis_pulled.SetBinContent(1+i,0)
+    knuis=0
+    syst_triple_list_splitted = []
+    for j in range(nPlots):
+	print 'New plot '+str(j)+' nSystPerPlot='+str(nSystPerPlot[j])
+	syst_triple_list_splitted_tmp = []
+	for k in range(nSystPerPlot[j]):
+	    #for k in range(len(syst_triple_list)):
+	    syst_triple_list_splitted_tmp.append(syst_triple_list[knuis])
+	    print str(j)+" k="+str(k)+" "+syst_triple_list[knuis][0]
+	    knuis = knuis + 1
+	syst_triple_list_splitted.append(syst_triple_list_splitted_tmp)
 
-#hist_nuis.SetMinimum(0)
-#hist_nuis.SetMaximum(1.2)
-if asimov!='data':
-    hist_nuis.SetMinimum(0)
-    hist_nuis.SetMaximum(1.2)
-else:
-    hist_nuis.SetMinimum(minhist-0.05)
-    hist_nuis.SetMaximum(maxhist+0.05)
-    hist_nuis_down.SetLineStyle(2)
-hist_nuis.GetYaxis().SetTitleOffset(0.4)
-hist_nuis.SetYTitle("Pull")
-hist_nuis.SetLineStyle(2)
-hist_nuis.GetXaxis().LabelsOption("v")
-hist_nuis.GetXaxis().SetLabelSize(0.05)
-hist_nuis.Draw()
-if asimov!='asimov':
-    hist_nuis_down.Draw("SAME")
-hist_nuis_pulled.Draw("ESAME")
+    for j in range(nPlots):
 
-latex = TLatex()
-latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
-latex.SetNDC()
-latex.DrawLatex(0.25,0.9,year+' '+wilson+'  '+asimov)
+	canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
+	pad = TPad("pad","pad",0,0,1,1)
+	pad.SetLeftMargin(0.06)
+	pad.SetBottomMargin(0.45)
+	pad.Draw()
+	pad.cd()
+
+	#nNuis = len(syst_list_new)
+	nNuis = nSystPerPlot[j]
+	hist_nuis_up = TH1F("hist_nuis_up","hist_nuis_up",nNuis,0,nNuis)
+	hist_nuis_down = TH1F("hist_nuis_down","hist_nuis_down",nNuis,0,nNuis)
+	hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",nNuis,0,nNuis)
+
+	minhist=-1.2
+	maxhist=1.2
+	for i in range(nNuis):
+	    hist_nuis_up.SetBinContent(1+i,1)
+	    hist_nuis_up.GetXaxis().SetBinLabel(1+i,syst_triple_list_splitted[j][i][0])
+	    hist_nuis_down.SetBinContent(1+i,-1)
+	    if (syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]<minhist):
+		minhist = syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]
+	    if (syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]>maxhist):
+		maxhist = syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]
+	    hist_nuis_pulled.SetBinContent(1+i,syst_triple_list_splitted[j][i][1])
+	    hist_nuis_pulled.SetBinError(1+i,syst_triple_list_splitted[j][i][2])
+	    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
+	    #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
+	    #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
+
+	if asimov=='asimov': #or asimov=='injectiontest':
+	    hist_nuis_up.SetMinimum(0)
+	    hist_nuis_up.SetMaximum(1.2)
+	else:
+	    hist_nuis_up.SetMinimum(minhist-0.05)
+	    hist_nuis_up.SetMaximum(maxhist+0.05)
+	    hist_nuis_down.SetLineStyle(2)
+	#hist_nuis.SetMaximum(1.2)
+	hist_nuis_up.GetYaxis().SetTitleOffset(0.4)
+	hist_nuis_up.SetYTitle("Pull")
+	hist_nuis_up.SetLineStyle(2)
+	hist_nuis_up.GetXaxis().LabelsOption("v")
+	hist_nuis_up.GetXaxis().SetLabelSize(0.05)
+	hist_nuis_up.Draw()
+	if asimov!='asimov':# and asimov!='injectiontest':
+	    hist_nuis_down.Draw("SAME")
+	hist_nuis_pulled.Draw("ESAME")
+
+	latex = TLatex()
+	latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
+	latex.SetNDC()
+	if asimov!='injectiontest':
+	    latex.DrawLatex(0.25,0.9,year+' '+wilson_choice+'  '+asimov)
+	else:
+	    latex.DrawLatex(0.25,0.9,year+' '+wilson_choice+'  '+asimov+' '+wilson+'=0.001')
+
+	canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+wilson_choice+'_'+asimov+'_'+str(j)+'_othersfloating.pdf')
 
 
-canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.pdf')
-'''
+for wilson_choice_ in wilsonserie.split("_"):
+    makeNuisancePulls(wilson_choice_)
 
 #raw_input()
 sys.exit()
@@ -406,21 +334,33 @@ pad.SetBottomMargin(0.2)
 pad.SetRightMargin(0.1)
 pad.Draw()
 pad.cd()
+
 hCov = fDiagnostics.Get("covariance_fit_s")
-hCov.GetXaxis().LabelsOption("v")
-hCov.GetXaxis().SetLabelSize(0.025)
-hCov.GetYaxis().SetLabelSize(0.025)
-hCov.GetZaxis().SetLabelSize(0.025)
-hCov.SetTitle("Systematics correlation matrix, "+year)
+hCovPOI = TH2F("covariance_fit_s_POI","covariance_fit_s_POI",4,0,4,4,0,4)
+for i in range(4):
+    hCovPOI.GetXaxis().SetBinLabel(1+i, wilson.split("_")[i])
+    hCovPOI.GetYaxis().SetBinLabel(1+i, wilson.split("_")[i])
+for i in range(4):
+    for j in range(4):
+        corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin(wilson.split("_")[i]), hCov.GetYaxis().FindBin(wilson.split("_")[j]))
+        hCovPOI.SetBinContent(i+1,j+1,corrval)
+
+
+hCovPOI.GetXaxis().LabelsOption("v")
+hCovPOI.GetXaxis().SetLabelSize(0.025)
+hCovPOI.GetYaxis().SetLabelSize(0.025)
+hCovPOI.GetZaxis().SetLabelSize(0.025)
+hCovPOI.SetTitle("SME coefficients correlation matrix, "+year)
 palette = hCov.GetListOfFunctions().FindObject("palette")
 palette.SetX1NDC(0.92)
 palette.SetX2NDC(0.94)
 palette.SetY1NDC(0.2)
 palette.SetY2NDC(0.9)
-hCov.Draw("COLZ")
-canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+hCovPOI.Draw("COLZTEXT")
+canvas.Print("impacts/CorrelationMatrixSMEcoefficients_othersfloating_"+observable+"_"+year+"_"+wilson+sasimov+".pdf")
 
-#exit()
+#raw_input()
+exit()
 
 ###################
 ## Pre-fit plot

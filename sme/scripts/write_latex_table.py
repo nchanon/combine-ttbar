@@ -19,6 +19,8 @@ else:
 
 if multiple=='multiple':
     smultiple = 'multiple_'
+elif multiple=='othersfloating':
+    smultiple = 'othersfloating_'
 else:
     smultiple = ''
 
@@ -138,6 +140,8 @@ else:
     text += '\n' +'\\caption{\\label{SMEresultsAllWilson}1-$\sigma$ precision (symmetrized) expected on the SME coefficients in 2016 and 2017 data'
 if multiple=='single':
     text += ', from fits of individual coefficients with all others set to zero.'
+elif multiple=='othersfloating':
+    text += ', from fits of individual coefficients with three others floating, by groups of 4 coefficients.'
 elif multiple=='multiple':
      text += ', from fits of coefficients by groups of 4 with all others set to zero.'
 text += '.}\n' +'\\end{center}'
@@ -151,6 +155,9 @@ elif asimov=='data':
 
 if asimov == 'asimov':
     outname += '_'+asimov
+else:
+    outname += '_data'
+
 print 'Write results in '+outname+'.txt'
 fileout = open(outname+'.txt','w')
 fileout.write(text)

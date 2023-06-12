@@ -3,6 +3,8 @@ import argparse
 import subprocess
 
 from ROOT import TFile, TH1, TCanvas, TH1F, TH2F, THStack, TString
+from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
+from ROOT import TStyle, gStyle, TColor, TLatex
 
 parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
@@ -56,14 +58,14 @@ def plot2Dmatrix(hCov, title):
     pad.SetRightMargin(0.12)
     pad.Draw()
     pad.cd()
-    for i in range(24):
-        hCov.GetXaxis().SetBinLabel(1+i, pois[i])
-        hCov.GetYaxis().SetBinLabel(1+i, pois[i])
+    #for i in range(4):
+        #hCov.GetXaxis().SetBinLabel(1+i, pois[i])
+        #hCov.GetYaxis().SetBinLabel(1+i, pois[i])
     hCov.GetXaxis().LabelsOption("v")
     hCov.GetXaxis().SetLabelSize(0.025)
     hCov.GetYaxis().SetLabelSize(0.025)
     hCov.GetZaxis().SetLabelSize(0.025)
-    hCov.SetTitle("Normalized diferential fit: "+title+", "+year)
+    hCov.SetTitle("SME fit others floating: "+title+", "+year)
     palette = hCov.GetListOfFunctions().FindObject("palette")
     hCov.Draw("COLZTEXT")
     #palette.SetX1NDC(0.92)
@@ -75,7 +77,7 @@ def plot2Dmatrix(hCov, title):
     #raw_input()
     #canvas.Print("impacts/"+title+"_NormDifferentialFit_"+observable+"_"+year+"_"+asimov+".pdf")
 
-    outname = './impacts/'+year+'/'+asimov+'/'+title+'_fit_multiple_'+observable+'_'+year
+    outname = './impacts/'+year+'/'+asimov+'/'+title+'_fit_othersfloating_'+observable+'_'+year
     if asimov == 'asimov':
         outname += '_'+asimov
     else:
@@ -100,11 +102,12 @@ for wlist in wilson_list:
 
 #for i in range(1):
 for i in range(len(wilson_list)):
-    cmd = 'combine -M MultiDimFit --algo=cross --cl=0.68 --cminDefaultMinimizerStrategy 0 '
+    cmd = 'combine -M MultiDimFit --algo=singles --cminDefaultMinimizerStrategy 0 '
+    #cmd = 'combine -M MultiDimFit --algo=cross --cl=0.68 --cminDefaultMinimizerStrategy 0 '
     cmd += workspace_input[i]
     cmd += asimov_param(wilson_list[i].split("_"))
     cmd += ' --saveFitResult '
-    cmd += ' -n .cross_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov
+    cmd += ' -n .othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov
     print cmd
     if doFit==True:
         os.system(cmd)
@@ -124,7 +127,7 @@ for i in range(len(wilson_list)):
     coeff_down = []
 
     wlist = wilson_list[i].split("_")
-    fResult = TFile('higgsCombine.cross_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.MultiDimFit.mH120.root')
+    fResult = TFile('higgsCombine.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.MultiDimFit.mH120.root')
     tResult = fResult.Get('limit')
 
     #tResult.GetEvent(0)
@@ -133,7 +136,7 @@ for i in range(len(wilson_list)):
         #coeff_central.append(tResult.GetLeaf(w).GetValue())
 
     for iw in range(len(wlist)):
-	tResult.GetEvent(0)
+        tResult.GetEvent(0)
 	coeff_central.append(tResult.GetLeaf(wlist[iw]).GetValue())
 	tResult.GetEvent(1+iw*2)
 	#print wlist[iw]+' down='+str(tResult.GetLeaf(wlist[iw]).GetValue())
@@ -145,25 +148,25 @@ for i in range(len(wilson_list)):
         #    print str(tResult.GetLeaf(wlist[j]).GetValue())
         #print wlist[iw]+' up='+str(tResult.GetLeaf(wlist[iw]).GetValue())
 	coeff_up.append(tResult.GetLeaf(wlist[iw]).GetValue()-coeff_central[-1])
-
-    #fFit = TFile('multidimfit.cross_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.root')
-    #if fFit != 0:
-    #    fitResult = fFit.Get("fit_mdf")
-    #    hCorrPOI.append(TH2F("hCorrPOI","hCorrPOI",4,0,4,4,0,4))
-    #    for j in range(len(wlist)):
-	#    for k in range(len(wlist)):
-	#        corrval = fitResult.correlation(wlist[j], wlist[k])
-	#        hCorrPOI[i].SetBinContent(1+j, 1+k, corrval)
-	#        plot2Dmatrix(hCorrPOI[i], "CorrelationMatrix_"+wilson_list[i])
-    #else:
-	#print 'No multidimfit file' 
-
+   
+    fFit = TFile('multidimfit.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.root')
+    fitResult = fFit.Get("fit_mdf")
+    hCorrPOI.append(TH2F("hCorrPOI"+wilson_list[i],"hCorrPOI"+wilson_list[i],4,0,4,4,0,4))
+    for j in range(len(wlist)):
+	for k in range(len(wlist)):
+	    corrval = fitResult.correlation(wlist[j], wlist[k])
+	    hCorrPOI[i].SetBinContent(1+j, 1+k, corrval)
+    	    hCorrPOI[i].GetXaxis().SetBinLabel(1+j, wlist[j])
+            hCorrPOI[i].GetYaxis().SetBinLabel(1+k, wlist[k])
+    plot2Dmatrix(hCorrPOI[i], "CorrelationMatrixOthersfloating_"+wilson_list[i])
+	    
+ 
     coeff_serie_central.append(coeff_central)
     coeff_serie_up.append(coeff_up)
     coeff_serie_down.append(coeff_down)
 
 #for i in range(len(wilson_list)):
-#    plot2Dmatrix(hCorr[i], "CorrelationMatrix_"+wilson_list[i])
+#    plot2Dmatrix(hCorrPOI[i], "CorrelationMatrixOthersfloating_"+wilson_list[i])
 
 
 text = ''
@@ -173,7 +176,7 @@ for i in range(len(wilson_list)):
 	print wlist[iw]+'='+str(coeff_serie_central[i][iw])+' +'+str(coeff_serie_up[i][iw])+' '+str(coeff_serie_down[i][iw])
 	text += wlist[iw]+' '+str(round(coeff_serie_central[i][iw],3))+' '+str(round(coeff_serie_down[i][iw],3))+' '+str(round(coeff_serie_up[i][iw],3))+'\n'
 
-outname = './impacts/'+year+'/'+asimov+'/fit_multiple_'+observable+'_'+year
+outname = './impacts/'+year+'/'+asimov+'/fit_othersfloating_'+observable+'_'+year
 if asimov == 'asimov':
     outname += '_'+asimov
 else:

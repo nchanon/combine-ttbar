@@ -3,7 +3,7 @@ import argparse
 
 sys.path.append('./')
 
-from ROOT import TFile, TH1, TH2, TCanvas, TH1F, THStack, TString
+from ROOT import TFile, TH1, TH2, TCanvas, TH1F, TH2F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
 from ROOT import TGraphAsymmErrors
 from ROOT import TStyle, gStyle, TColor, TLatex
@@ -31,25 +31,55 @@ parser.add_argument('title', help='display your observable title')
 args = parser.parse_args()
 observable = args.observable
 year = args.year
-wilson = args.wilson
+wilson = args.wilson #should be something like cLXX_cLXY_cLXZ_cLYZ
 asimov = args.asimov
 title = args.title
 
-pois = []
-for i in range(24):
-    pois.append('r_'+str(i))
+#pois = []
+#for i in range(24):
+#    pois.append('r_'+str(i))
 
-asi = ' --setParameterRanges '+wilson+'=-30,30 ' #range OK for single fits
+
+#asi = ' --setParameterRanges '+wilson+'=-30,30 ' #range OK for single fits
+
+def asimov_param(wlist):
+    asi = ' --setParameters '
+    for w in wlist:
+        asi += w+'=0'
+        if w!=wlist[-1]:
+            asi += ','
+    asi += ' --setParameterRanges '
+    for w in wlist:
+        if w[-2:]=='XX' or w[-2:]=='XY':
+            wrange='30'
+        if w[-2:]=='XZ' or w[-2:]=='YZ':
+            wrange='100'
+        asi += w+'=-'+wrange+','+wrange
+        #asi += w+'=-100,100'
+        if w!=wlist[-1]:
+            asi += ':'
+    if asimov == 'asimov':
+        asi += ' -t -1'
+    return asi
+
+wilson_list_all = [
+    'cLXX_cLXY_cLXZ_cLYZ',
+    'cRXX_cRXY_cRXZ_cRYZ',
+    'cXX_cXY_cXZ_cYZ',
+    'dXX_dXY_dXZ_dYZ'
+]
+
+wilson_list = wilson_list_all
+
 sasimov=''
 if asimov == 'asimov':
     #asi += '--expectSignal 0  -t -1 '
-    asi  += '--setParameters '+wilson+'=0 -t -1 '
+    #asi  += '--setParameters '+wilson+'=0 -t -1 '
     sasimov = '_asimov'
 elif asimov == 'injectiontest':
-    asi  += '--setParameters '+wilson+'=1 -t -1 '
+    #asi  += '--setParameters '+wilson+'=1 -t -1 '
     sasimov = '_injectiontest'
 else:
-    asi  += '--setParameters '+wilson+'=0 '
     sasimov = '_data'
 
 
@@ -85,33 +115,33 @@ if (doPrePostFitOnly==False):
     if (asimov=='asimov' or asimov=='injectiontest'):
         finput = './inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root'
     else:
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+wilson+'_'+asimov
+        cmd2 = 'combine -M MultiDimFit --algo=cross --cl=0.68 -n .cross_snapshot_'+year+'_'+wilson+'_'+asimov
 	cmd2 += optim
         cmd2 += ' -d inputs/'+observable+'_'+wilson+'_workspace_'+year+'.root '
-        cmd2 += asi #asimov_param(asimov)
+        cmd2 += asimov_param(wilson.split("_")) #asimov_param(asimov)
         cmd2 += ' --saveWorkspace'
     	os.system(cmd2)
-    	finput = "higgsCombine.snapshot_"+year+"_"+wilson+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
+    	finput = "higgsCombine.cross_snapshot_"+year+"_"+wilson+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
-    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi+optim
-    cmd5 += ' --saveShapes --saveWithUncertainties '
-    cmd5 += '-n .prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
+    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 ' + asimov_param(wilson.split("_")) + optim
+    cmd5 += ' --saveShapes --saveWithUncertainties --plots '
+    cmd5 += '-n .cross_prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
     #cmd5 += ' --skipBOnlyFit --plots'
     print cmd5
     os.system(cmd5)
 
 #cmd6 = 'python diffNuisances.py fitDiagnostics.Test.root --skipFitB --all -g '+nuisances+'.root'
 
-
-fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root',"READ")
+fDiagnostics = TFile('fitDiagnostics.cross_prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root',"READ")
 
 ###################
 ## Nuisances checks
 ###################
 
+wilson_choice = wilson.split("_")[0]
 tolerance = 0.05
 
-cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '+wilson+' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log'
+cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '+wilson_choice+' --vtol '+str(tolerance)+' -g Nuisances.prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov+'.log'
 print cmd6
 os.system(cmd6)
 
@@ -390,7 +420,7 @@ canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+wilson+'_'+asimov
 '''
 
 #raw_input()
-sys.exit()
+#sys.exit()
 
 ###################
 ## Correlation plot
@@ -406,21 +436,33 @@ pad.SetBottomMargin(0.2)
 pad.SetRightMargin(0.1)
 pad.Draw()
 pad.cd()
+
 hCov = fDiagnostics.Get("covariance_fit_s")
-hCov.GetXaxis().LabelsOption("v")
-hCov.GetXaxis().SetLabelSize(0.025)
-hCov.GetYaxis().SetLabelSize(0.025)
-hCov.GetZaxis().SetLabelSize(0.025)
-hCov.SetTitle("Systematics correlation matrix, "+year)
+hCovPOI = TH2F("covariance_fit_s_POI","covariance_fit_s_POI",4,0,4,4,0,4)
+for i in range(4):
+    hCovPOI.GetXaxis().SetBinLabel(1+i, wilson.split("_")[i])
+    hCovPOI.GetYaxis().SetBinLabel(1+i, wilson.split("_")[i])
+for i in range(4):
+    for j in range(4):
+        corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin(wilson.split("_")[i]), hCov.GetYaxis().FindBin(wilson.split("_")[j]))
+        hCovPOI.SetBinContent(i+1,j+1,corrval)
+
+
+hCovPOI.GetXaxis().LabelsOption("v")
+hCovPOI.GetXaxis().SetLabelSize(0.025)
+hCovPOI.GetYaxis().SetLabelSize(0.025)
+hCovPOI.GetZaxis().SetLabelSize(0.025)
+hCovPOI.SetTitle("SME coefficients correlation matrix, "+year)
 palette = hCov.GetListOfFunctions().FindObject("palette")
 palette.SetX1NDC(0.92)
 palette.SetX2NDC(0.94)
 palette.SetY1NDC(0.2)
 palette.SetY2NDC(0.9)
-hCov.Draw("COLZ")
-canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+hCovPOI.Draw("COLZTEXT")
+canvas.Print("impacts/CorrelationMatrixSMEcoefficients_multiple_"+observable+"_"+year+"_"+wilson+sasimov+".pdf")
 
-#exit()
+#raw_input()
+exit()
 
 ###################
 ## Pre-fit plot

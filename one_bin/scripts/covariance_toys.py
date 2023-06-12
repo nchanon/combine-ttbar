@@ -24,13 +24,17 @@ fCovar = []
 fCovarPrefix = "./multidimfit"
 observable = "n_bjets"
 year="Comb"
+asi ="data"
+
+nuisname = "time_flat"
+NuisanceGroup="time_flat_uncorr_corr_mcstat"
 
 #nuisname = "hdamp"
 #NuisanceGroup="theory_pttop_mtop_ps_qcdscale_pdfas_hdamp_uetune_colorreco"
 
 #nuisname = "theory"
-nuisname = "bkgd_norm"
-NuisanceGroup="exp_theory_bkgdnorm_lumi_mcstat"
+#nuisname = "bkgd_norm"
+#NuisanceGroup="exp_theory_bkgdnorm_lumi_mcstat"
 
 hCorrPOI_mean = TH2F("hCorrPOI_mean","hCorrPOI_mean",24,0,24,24,0,24)
 hCovUp_mean = TH2F("hCovUp_mean","hCovUp_mean",24,0,24,24,0,24)
@@ -57,7 +61,11 @@ covAvg_sum = np.zeros((ntimebin,ntimebin))
 for k in range(0, 200):
     print str(k)
 
-    fCovar.append(TFile(fCovarPrefix+".freeze"+nuisname+"_"+observable+"_"+year+"_"+NuisanceGroup+"_toy_"+str(k)+".root"))
+    if asi=="asimov":
+        fCovar.append(TFile(fCovarPrefix+".freeze"+nuisname+"_"+observable+"_"+year+"_"+NuisanceGroup+"_toy_"+str(k)+".root"))
+    if asi=="data":
+        fCovar.append(TFile(fCovarPrefix+".freeze"+nuisname+"_"+observable+"_"+year+"_"+NuisanceGroup+"_data_"+str(k)+".root"))
+
     fitResult = fCovar[k].Get("fit_mdf")
     parameters = fitResult.floatParsFinal()
 
@@ -121,8 +129,10 @@ for j in range(ntimebin):
 	cov_sample[j][k] /= (200.-1.)
 	hCov_sample.SetBinContent(1+j,1+k,cov_sample[j][k])
 
-
-fOut = TFile("covariance_fromToys_"+observable+"_"+year+"_"+NuisanceGroup+"_freeze"+nuisname+".root","RECREATE")
+if asi=="asimov":
+    fOut = TFile("covariance_fromToys_"+observable+"_"+year+"_"+NuisanceGroup+"_freeze"+nuisname+".root","RECREATE")
+if asi=="data":
+    fOut = TFile("covariance_fromToys_"+observable+"_"+year+"_"+NuisanceGroup+"_freeze"+nuisname+"_"+asi+".root","RECREATE")
 fOut.cd()
 hCovAvg_mean.Write()
 hCovUp_mean.Write()

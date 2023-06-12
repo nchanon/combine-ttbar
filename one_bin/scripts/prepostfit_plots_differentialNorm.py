@@ -15,7 +15,7 @@ from tools.style_manager import *
 #from tools.sample_manager import *
 import array
 
-import tools.tdrstyle as tdr
+import tools.tdrstylePaper as tdr
 tdr.setTDRStyle()
 
 ###################
@@ -26,29 +26,35 @@ parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 parser.add_argument('asimov',nargs='?', help='set if asimov test')
+parser.add_argument('fitkind',nargs='?', help='prefit or postfit')
 parser.add_argument('title', help='display your observable title')
 
 args = parser.parse_args()
 observable = args.observable
 year = args.year
 asimov = args.asimov
+fitkind_ = args.fitkind
 title = args.title
 
 pois = []
-for i in range(24):
-    pois.append('r_'+str(i))
+pois.append("r_avg")
+for i in range(23):
+    pois.append('f_'+str(i))
+#for i in range(24):
+#    pois.append('r_'+str(i))
 
-asi = ' --redefineSignalPOIs '
+initial_param = ' --redefineSignalPOIs '
 for i in range(24):
-    asi += pois[i]
+    initial_param += pois[i]
     if i != 23:
-        asi += ','
-asi += ' --setParameters '
+        initial_param += ','
+initial_param += ' --setParameters '
 for i in range(24):
-    asi += pois[i]+'=1'
+    initial_param += pois[i]+'=1'
     if i != 23:
-        asi += ','
+        initial_param += ','
 
+asi = initial_param
 sasimov=''
 #    asi = '--expectSignal 1 -t -1'
 if asimov == 'asimov':
@@ -134,24 +140,31 @@ optim = ' --cminDefaultMinimizerStrategy 0 '
 #optim = ' --robustFit 1 '
 
 if (doPrePostFitOnly==False):
-    #if (fitkind=='prefit'):
+    #if (fitkind_.find('prefit')!=-1):
     if (asimov=='asimov'):
-	finput = 'inputs/combine_'+observable+'_24bins_'+year+'_workspace.root'
+	finput = 'inputs/combine_'+observable+'_24bins_'+year+'_workspace_norm.root'
     else:
-        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+asimov + optim #' --robustFit 1 '
-        cmd2 += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace.root '
+        cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+'_'+asimov+'_normfit'+ optim #' --robustFit 1 '
+        cmd2 += ' -d inputs/combine_'+observable+'_24bins_'+year+'_workspace_norm.root '
         cmd2 += asi #asimov_param(asimov)
         #cmd2 += ' --algo=singles'
         #cmd2 += ' --parameters '+rbin+' --setParameterRanges '+rbin+'='+r_range #+' --floatOtherPOIs=1'
-        cmd2 += ' --saveWorkspace'
+        cmd2 += ' --saveWorkspace '
+	print cmd2
 	os.system(cmd2)
-	finput = "higgsCombine.snapshot_"+year+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
+	finput = "higgsCombine.snapshot_"+year+"_"+asimov+"_normfit.MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
-    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '+asi
+	#exit()
+
+    cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 '
+    if fitkind_=='prefit_asimov':
+	cmd5 += asi #Removed on Apr 1st (wasn't there for inclusive fit)
+    else:
+	cmd5 += initial_param
     #cmd5 +=  ' --cminDefaultMinimizerType Minuit --cminDefaultMinimizerStrategy 0'
     cmd5 += ' --cminDefaultMinimizerStrategy 0'
-    cmd5 += ' --saveShapes --saveWithUncertainties --plots'
-    cmd5 += ' -n .prefit_'+observable+'_'+year+'_'+asimov
+    cmd5 += ' --saveShapes --saveWithUncertainties --plots --saveOverallShapes'
+    cmd5 += ' -n .prefit_'+observable+'_'+year+'_'+fitkind_+'_normfit'
     print cmd5
     #cmd5 += ' --skipBOnlyFit --plots'
     os.system(cmd5)
@@ -160,7 +173,7 @@ if (doPrePostFitOnly==False):
 
 #exit()
 
-fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+asimov+'.root',"READ")
+fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+fitkind_+'_normfit.root',"READ")
 #fDiagnostics = TFile("fitDiagnostics.Test.root","READ")
 
 
@@ -168,172 +181,178 @@ fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+asimov+'.r
 ## Nuisances checks
 ###################
 
-tolerance = 0.05
-#poi = 'r_0'
-#poi = 'r_1'
-#poi = 'r_18'
-poi = 'r_23'
+doPull=False
 
-cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '
-cmd6 += poi
-#for i in range(24):
-#    cmd6 += pois[i]
-#    if (i!=23): 
-#        cmd6 += ','
-cmd6 += ' --skipFitB'
-#cmd6 += ' --all '
-cmd6 += ' --vtol '+str(tolerance)
-cmd6 += ' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log'
-print cmd6
-os.system(cmd6)
+if doPull==True:
+    tolerance = 0.05
+    #poi = 'r_0'
+    #poi = 'r_1'
+    #poi = 'r_18'
+    #poi = 'r_23'
+    poi = 'f_0'
+
+    cmd6 = 'python diffNuisances.py '+fDiagnostics.GetName()+' -p '
+    cmd6 += poi
+    #for i in range(24):
+    #    cmd6 += pois[i]
+    #    if (i!=23): 
+    #        cmd6 += ','
+    cmd6 += ' --skipFitB'
+    #cmd6 += ' --all '
+    cmd6 += ' --vtol '+str(tolerance)
+    cmd6 += ' -g Nuisances.prefit_'+observable+'_'+year+'_'+asimov+'_normfit.root -f text > diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'_normfit.log'
+    print cmd6
+    os.system(cmd6)
 
 
 
-syst_list = []
-syst_pull = []
-syst_uncert = []
+    syst_list = []
+    syst_pull = []
+    syst_uncert = []
 
-file = open('diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'.log')
-iline=0
-for line in file:
-    j = 0
-    isHighlightedFirst = False
-    isHighlightedSecond = False
-    for word in line.split():
-        print(str(iline)+' j='+str(j)+' '+word)
-	if iline>3:
-	    if j==0:
-		syst_list.append(word)
-	    if j==1 and word=='!':
-		isHighlightedFirst = True
-	    if j==3 and word=='!':
-		isHighlightedSecond = True
-            if j==3 and isHighlightedFirst==False and isHighlightedSecond==False:
-                syst_pull.append(float(word[:-1]))
-	    if j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
-		syst_uncert.append(float(word))
-            if j==4 and isHighlightedSecond==True:
-                syst_pull.append(float(word[:-1]))
-	    if j==5 and isHighlightedSecond==True:
-		syst_uncert.append(float(word[:-1]))
-            if j==5 and isHighlightedFirst==True:
-                syst_pull.append(float(word[:-1]))
-	    if j==6 and isHighlightedFirst==True:
-		syst_uncert.append(float(word[:-1]))
+    file = open('diffNuisances_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'_normfit.log')
+    iline=0
+    for line in file:
+	j = 0
+	isHighlightedFirst = False
+	isHighlightedSecond = False
+	for word in line.split():
+	    print(str(iline)+' j='+str(j)+' '+word)
+	    if iline>3:
+		if j==0:
+		    syst_list.append(word)
+		if j==1 and word=='!':
+		    isHighlightedFirst = True
+		if j==3 and word=='!':
+		    isHighlightedSecond = True
+		if j==3 and isHighlightedFirst==False and isHighlightedSecond==False:
+		    syst_pull.append(float(word[:-1]))
+		if j==4 and isHighlightedFirst==False and isHighlightedSecond==False:
+		    syst_uncert.append(float(word))
+		if j==4 and isHighlightedSecond==True:
+		    syst_pull.append(float(word[:-1]))
+		if j==5 and isHighlightedSecond==True:
+		    syst_uncert.append(float(word[:-1]))
+		if j==5 and isHighlightedFirst==True:
+		    syst_pull.append(float(word[:-1]))
+		if j==6 and isHighlightedFirst==True:
+		    syst_uncert.append(float(word[:-1]))
 
-        j += 1
-    iline += 1
+	    j += 1
+	iline += 1
 
-print str(len(syst_list))+ ' ' + str(len(syst_uncert))
-
-print syst_list
-print syst_uncert
-
-syst_uncert_new = []
-syst_list_new = []
-syst_pull_new = []
-
-if asimov=='asimov' or asimov=='data':
-    for i in range(len(syst_uncert)):
-        if syst_uncert[i]<0.95:
-            syst_uncert_new.append(syst_uncert[i])
-            syst_list_new.append(syst_list[i])
-	    syst_pull_new.append(syst_pull[i])
-    #syst_list.clear()
-    #syst_list = syst_list_new
-    #syst_uncert.clear()
-    #syst_uncer = syst_uncert_new
-    print str(len(syst_list))+ ' ' + str(len(syst_uncert))
-else:
-    syst_list_new = syst_list
-    syst_uncert_new = syst_uncert
-    syst_pull_new = syst_pull
     print str(len(syst_list))+ ' ' + str(len(syst_uncert))
 
-syst_triple_list = []
-for isyst in range(len(syst_list_new)):
-    syst_triple_list.append([syst_list_new[isyst],syst_pull_new[isyst],syst_uncert_new[isyst]])
+    print syst_list
+    print syst_uncert
 
-syst_triple_list.sort(key=lambda row: row[0])
+    syst_uncert_new = []
+    syst_list_new = []
+    syst_pull_new = []
 
-nSystMax = 100
-nPlots = 1 + len(syst_triple_list) / nSystMax
-print "nSyst="+str(len(syst_triple_list))+" nPlots="+str(nPlots)
-#nSystPerPlot = len(syst_triple_list)/nPlots
-nSystPerPlot = []
-for j in range(nPlots):
-    if j!=nPlots-1 or (j==nPlots-1 and len(syst_triple_list) % nPlots == 0):
-        nSystPerPlot.append(len(syst_triple_list)/nPlots)
-    elif j==nPlots-1 and len(syst_triple_list) % nPlots == 1:
-        nSystPerPlot.append(len(syst_triple_list)/nPlots+1)
-
-knuis=0
-syst_triple_list_splitted = []
-for j in range(nPlots):
-    syst_triple_list_splitted_tmp = []
-    for k in range(nSystPerPlot[j]):
-        #for k in range(len(syst_triple_list)):
-        syst_triple_list_splitted_tmp.append(syst_triple_list[knuis])
-        print str(j)+" k="+str(k)+" "+syst_triple_list[knuis][0]
-        knuis = knuis + 1
-    syst_triple_list_splitted.append(syst_triple_list_splitted_tmp)
-
-
-for j in range(nPlots):
-
-    canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
-    pad = TPad("pad","pad",0,0,1,1)
-    pad.SetLeftMargin(0.06)
-    pad.SetBottomMargin(0.45)
-    pad.Draw()
-    pad.cd()
-
-    #nNuis = len(syst_list_new)
-    nNuis = nSystPerPlot[j]
-    hist_nuis_up = TH1F("hist_nuis_up","hist_nuis_up",nNuis,0,nNuis)
-    hist_nuis_down = TH1F("hist_nuis_down","hist_nuis_down",nNuis,0,nNuis)
-    hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",nNuis,0,nNuis)
-
-    minhist=-1.2
-    maxhist=1.2
-    for i in range(nNuis):
-	hist_nuis_up.SetBinContent(1+i,1)
-	hist_nuis_up.GetXaxis().SetBinLabel(1+i,syst_triple_list_splitted[j][i][0])
-	hist_nuis_down.SetBinContent(1+i,-1)
-	if (syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]<minhist):
-	    minhist = syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]
-	if (syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]>maxhist):
-	    maxhist = syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]
-	hist_nuis_pulled.SetBinContent(1+i,syst_triple_list_splitted[j][i][1])
-	hist_nuis_pulled.SetBinError(1+i,syst_triple_list_splitted[j][i][2])
-	#hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
-	#hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
-	#hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
-
-    if asimov=='asimov':
-	hist_nuis_up.SetMinimum(0)
-	hist_nuis_up.SetMaximum(1.2)
+    if asimov=='asimov' or asimov=='data':
+	for i in range(len(syst_uncert)):
+	    if syst_uncert[i]<0.95:
+		syst_uncert_new.append(syst_uncert[i])
+		syst_list_new.append(syst_list[i])
+		syst_pull_new.append(syst_pull[i])
+	#syst_list.clear()
+	#syst_list = syst_list_new
+	#syst_uncert.clear()
+	#syst_uncer = syst_uncert_new
+	print str(len(syst_list))+ ' ' + str(len(syst_uncert))
     else:
-	hist_nuis_up.SetMinimum(minhist-0.05)
-	hist_nuis_up.SetMaximum(maxhist+0.05)
-	hist_nuis_down.SetLineStyle(2)
-    #hist_nuis.SetMaximum(1.2)
-    hist_nuis_up.GetYaxis().SetTitleOffset(0.4)
-    hist_nuis_up.SetYTitle("Pull")
-    hist_nuis_up.SetLineStyle(2)
-    hist_nuis_up.GetXaxis().LabelsOption("v")
-    hist_nuis_up.GetXaxis().SetLabelSize(0.05)
-    hist_nuis_up.Draw()
-    if asimov!='asimov':
-	hist_nuis_down.Draw("SAME")
-    hist_nuis_pulled.Draw("ESAME")
+	syst_list_new = syst_list
+	syst_uncert_new = syst_uncert
+	syst_pull_new = syst_pull
+	print str(len(syst_list))+ ' ' + str(len(syst_uncert))
 
-    latex = TLatex()
-    latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
-    latex.SetNDC()
-    latex.DrawLatex(0.25,0.9,year+' '+poi+'  '+asimov)
+    syst_triple_list = []
+    for isyst in range(len(syst_list_new)):
+	syst_triple_list.append([syst_list_new[isyst],syst_pull_new[isyst],syst_uncert_new[isyst]])
 
-    canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'_'+str(j)+'.pdf')
+    syst_triple_list.sort(key=lambda row: row[0])
+
+    nSystMax = 100
+    nPlots = 1 + len(syst_triple_list) / nSystMax
+    print "nSyst="+str(len(syst_triple_list))+" nPlots="+str(nPlots)
+    #nSystPerPlot = len(syst_triple_list)/nPlots
+    nSystPerPlot = []
+    for j in range(nPlots):
+	if j!=nPlots-1 or (j==nPlots-1 and len(syst_triple_list) % nPlots == 0):
+	    nSystPerPlot.append(len(syst_triple_list)/nPlots)
+	elif j==nPlots-1 and len(syst_triple_list) % nPlots == 1:
+	    nSystPerPlot.append(len(syst_triple_list)/nPlots+1)
+
+    knuis=0
+    syst_triple_list_splitted = []
+    for j in range(nPlots):
+	syst_triple_list_splitted_tmp = []
+	for k in range(nSystPerPlot[j]):
+	    #for k in range(len(syst_triple_list)):
+	    syst_triple_list_splitted_tmp.append(syst_triple_list[knuis])
+	    print str(j)+" k="+str(k)+" "+syst_triple_list[knuis][0]
+	    knuis = knuis + 1
+	syst_triple_list_splitted.append(syst_triple_list_splitted_tmp)
+
+
+    for j in range(nPlots):
+
+	canvas = TCanvas('Nuisance pulls','Nuisance pulls',1400,400)
+	pad = TPad("pad","pad",0,0,1,1)
+	pad.SetLeftMargin(0.06)
+        pad.SetRightMargin(0.1)
+	pad.SetBottomMargin(0.45)
+	pad.Draw()
+	pad.cd()
+
+	#nNuis = len(syst_list_new)
+	nNuis = nSystPerPlot[j]
+	hist_nuis_up = TH1F("hist_nuis_up","hist_nuis_up",nNuis,0,nNuis)
+	hist_nuis_down = TH1F("hist_nuis_down","hist_nuis_down",nNuis,0,nNuis)
+	hist_nuis_pulled = TH1F("hist_nuis_pulled","hist_nuis_pulled",nNuis,0,nNuis)
+
+	minhist=-1.2
+	maxhist=1.2
+	for i in range(nNuis):
+	    hist_nuis_up.SetBinContent(1+i,1)
+	    hist_nuis_up.GetXaxis().SetBinLabel(1+i,syst_triple_list_splitted[j][i][0])
+	    hist_nuis_down.SetBinContent(1+i,-1)
+	    if (syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]<minhist):
+		minhist = syst_triple_list_splitted[j][i][1]-syst_triple_list_splitted[j][i][2]
+	    if (syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]>maxhist):
+		maxhist = syst_triple_list_splitted[j][i][1]+syst_triple_list_splitted[j][i][2]
+	    hist_nuis_pulled.SetBinContent(1+i,syst_triple_list_splitted[j][i][1])
+	    hist_nuis_pulled.SetBinError(1+i,syst_triple_list_splitted[j][i][2])
+	    #hist_nuis.GetXaxis().SetBinLabel(1+i,syst_list_new[i])
+	    #hist_nuis_pulled.SetBinError(1+i,syst_uncert_new[i])
+	    #hist_nuis_pulled.SetBinContent(1+i,syst_uncert[i])
+
+	if asimov=='asimov':
+	    hist_nuis_up.SetMinimum(0)
+	    hist_nuis_up.SetMaximum(1.2)
+	else:
+	    hist_nuis_up.SetMinimum(minhist-0.05)
+	    hist_nuis_up.SetMaximum(maxhist+0.05)
+	    hist_nuis_down.SetLineStyle(2)
+	#hist_nuis.SetMaximum(1.2)
+	hist_nuis_up.GetYaxis().SetTitleOffset(0.4)
+	hist_nuis_up.SetYTitle("Pull")
+	hist_nuis_up.SetLineStyle(2)
+	hist_nuis_up.GetXaxis().LabelsOption("v")
+	hist_nuis_up.GetXaxis().SetLabelSize(0.05)
+	hist_nuis_up.Draw()
+	if asimov!='asimov':
+	    hist_nuis_down.Draw("SAME")
+	hist_nuis_pulled.Draw("ESAME")
+
+	latex = TLatex()
+	latex.SetTextSize(1.2*gStyle.GetPadTopMargin())
+	latex.SetNDC()
+	latex.DrawLatex(0.25,0.9,year+' '+poi+'  '+asimov)
+
+	#canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'_normfit_'+str(j)+'.pdf')
+	canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+fitkind_+'_normfit_'+str(j)+'.pdf')
 
 #raw_input()
 #sys.exit()
@@ -343,45 +362,51 @@ for j in range(nPlots):
 ## Correlation plot
 ###################
 
-#if (doPrePostFitOnly==True):
-gStyle.SetPalette(55)
-gStyle.SetOptStat(0)
+doCorrPOI=False
 
-hCov = fDiagnostics.Get("covariance_fit_s")
+if doCorrPOI==True:
+    #if (doPrePostFitOnly==True):
+    gStyle.SetPalette(55)
+    gStyle.SetOptStat(0)
 
-canvas = TCanvas('CorrelationMatrix','CorrelationMatrix',1000,800)
-pad = TPad("pad","pad",0,0,1,1)
-pad.SetLeftMargin(0.16)
-pad.SetBottomMargin(0.2)
-pad.SetRightMargin(0.1)
-pad.Draw()
-pad.cd()
+    hCov = fDiagnostics.Get("covariance_fit_s")
 
-hCovPOI = TH2F("covariance_fit_s_POI","covariance_fit_s_POI",24,0,24,24,0,24)
-for i in range(24):
-    hCovPOI.GetXaxis().SetBinLabel(1+i, "r_"+str(i))
-    hCovPOI.GetYaxis().SetBinLabel(1+i, "r_"+str(i))
+    canvas = TCanvas('CorrelationMatrix','CorrelationMatrix',1000,800)
+    pad = TPad("pad","pad",0,0,1,1)
+    pad.SetLeftMargin(0.16)
+    pad.SetBottomMargin(0.2)
+    pad.SetRightMargin(0.1)
+    pad.Draw()
+    pad.cd()
 
-for i in range(24):
-    for j in range(24):
-	corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin("r_"+str(i)), hCov.GetYaxis().FindBin("r_"+str(j)))
-	hCovPOI.SetBinContent(i+1,j+1,corrval)
-	
-hCovPOI.GetXaxis().LabelsOption("v")
-hCovPOI.GetXaxis().SetLabelSize(0.025)
-hCovPOI.GetYaxis().SetLabelSize(0.025)
-hCovPOI.GetZaxis().SetLabelSize(0.025)
-#hCov.SetTitle("Systematics correlation matrix, "+year)
-hCovPOI.SetTitle("Signal strengths correlation matrix, "+year)
+    hCovPOI = TH2F("covariance_fit_s_POI","covariance_fit_s_POI",24,0,24,24,0,24)
+    for i in range(24):
+	#hCovPOI.GetXaxis().SetBinLabel(1+i, "r_"+str(i))
+	#hCovPOI.GetYaxis().SetBinLabel(1+i, "r_"+str(i))
+	hCovPOI.GetXaxis().SetBinLabel(1+i, pois[i])
+	hCovPOI.GetYaxis().SetBinLabel(1+i, pois[i])
 
-palette = hCov.GetListOfFunctions().FindObject("palette")
-palette.SetX1NDC(0.92)
-palette.SetX2NDC(0.94)
-palette.SetY1NDC(0.2)
-palette.SetY2NDC(0.9)
-hCovPOI.Draw("COLZ")
-#canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
-canvas.Print("impacts/CorrelationMatrixSignalStrength_"+observable+"_"+year+sasimov+".pdf")
+    for i in range(24):
+	for j in range(24):
+	    corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin(pois[i]), hCov.GetYaxis().FindBin(pois[j]))
+	    #corrval = hCov.GetBinContent(hCov.GetXaxis().FindBin("r_"+str(i)), hCov.GetYaxis().FindBin("r_"+str(j)))
+	    hCovPOI.SetBinContent(i+1,j+1,corrval)
+	    
+    hCovPOI.GetXaxis().LabelsOption("v")
+    hCovPOI.GetXaxis().SetLabelSize(0.025)
+    hCovPOI.GetYaxis().SetLabelSize(0.025)
+    hCovPOI.GetZaxis().SetLabelSize(0.025)
+    #hCov.SetTitle("Systematics correlation matrix, "+year)
+    hCovPOI.SetTitle("Signal strengths correlation matrix, "+year)
+
+    palette = hCov.GetListOfFunctions().FindObject("palette")
+    palette.SetX1NDC(0.92)
+    palette.SetX2NDC(0.94)
+    palette.SetY1NDC(0.2)
+    palette.SetY2NDC(0.9)
+    hCovPOI.Draw("COLZ")
+    #canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+".pdf")
+    canvas.Print("impacts/CorrelationMatrixNormFit_"+observable+"_"+year+"_"+fitkind_+".pdf")
 
 #raw_input()
 #sys.exit()
@@ -390,6 +415,8 @@ canvas.Print("impacts/CorrelationMatrixSignalStrength_"+observable+"_"+year+sasi
 ###################
 ## Pre-fit plot
 ###################
+
+leftmargin = 0.2
 
 if (observable=="m_dilep"):
     nbin = 7
@@ -412,7 +439,7 @@ TH1.SetDefaultSumw2(1)
 
 doLog = False
 
-r = 0.3
+r = 0.4
 epsilon = 0.1
 
 #displayPrePostFitPlot("prefit")
@@ -430,16 +457,22 @@ if (year=="Comb"):
     nObsBins = 48
 
 def getHistWithXaxis(hist):
-    hist_new = TH1F(hist.GetName()+"_new", hist.GetName()+"_new", nbin, min_bin, max_bin)
-    for i in range(nbin):
+    nbin_new = hist.GetNbinsX()
+    min_bin_new = hist.GetXaxis().GetXmin()
+    max_bin_new = hist.GetXaxis().GetXmax()
+    hist_new = TH1F(hist.GetName()+"_new", hist.GetName()+"_new", nbin_new, min_bin_new, max_bin_new)
+    for i in range(nbin_new):
         hist_new.SetBinContent(i+1,hist.GetBinContent(i+1))
         hist_new.SetBinError(i+1,hist.GetBinError(i+1))
     return hist_new
 
 def getHist2DWithXaxis(hist):
-    hist_new = TH2F(hist.GetName()+"_new", hist.GetName()+"_new", nbin, min_bin, max_bin, nbin, min_bin, max_bin)
-    for i in range(nbin):
-	for j in range(nbin):
+    nbin_new = hist.GetNbinsX()
+    min_bin_new = hist.GetXaxis().GetXmin()
+    max_bin_new = hist.GetXaxis().GetXmax()
+    hist_new = TH2F(hist.GetName()+"_new", hist.GetName()+"_new", nbin_new, min_bin_new, max_bin_new, nbin_new, min_bin_new, max_bin_new)
+    for i in range(nbin_new):
+	for j in range(nbin_new):
 	    hist_new.SetBinContent(i+1,j+1,hist.GetBinContent(i+1,j+1))
     return hist_new
 
@@ -459,7 +492,7 @@ def getGraphWithXaxis(graph):
     y = []
     ey_up  = []
     ey_down = []
-    for i in range(nbin):
+    for i in range(graph.GetN()):
         x.append(min_bin+width_bin/2.+width_bin*i)
         ex_left.append(width_bin/2.)
         ex_right.append(width_bin/2.)
@@ -538,46 +571,68 @@ def getUncertaintyBandRatioGraph(hist):
 #        hist_new.SetBinError(i+1,hist.GetBinError(i+1))
 #    return hist_new
 
-def getChi2(hist_data, hist_total, hist_total_covar):
+def getChi2(hist_data, hist_total, hist_total_covar, nkinbin):
 
     doNormalize = False
 
-    nkinbin = hist_total.GetNbinsX()
+    #nkinbin = hist_total.GetNbinsX()
+    print 'nkinbin='+str(nkinbin) 
+
+    doNoCovMatrix = False
+    if doNoCovMatrix==True:
+	chi2noCov = 0
+	for i in range(nkinbin):
+	    chi2noCov += (hist_data.GetY()[i] - hist_total.GetBinContent(1+i))*(hist_data.GetY()[i] - hist_total.GetBinContent(1+i)) / (hist_total.GetBinError(1+i)*hist_total.GetBinError(1+i))
+	print  'chi2noCov='+str(chi2noCov)
+	return chi2noCov 
 
     matrix_Cov = np.zeros((nkinbin,nkinbin))
     for i in range(nkinbin):
-	print 'Check: nbjet bin '+str(i)+' errror on Nev ='+str(hist_total.GetBinError(1+i))+' from covar '+str(math.sqrt(hist_total_covar.GetBinContent(1+i,1+i)))
+	#print 'Check: nbjet bin '+str(i)+' errror on Nev ='+str(hist_total.GetBinError(1+i))+' from covar '+str(math.sqrt(hist_total_covar.GetBinContent(1+i,1+i)))
 	for j in range(nkinbin):
 	    matrix_Cov[i][j] = hist_total_covar.GetBinContent(1+i,1+j)
 	    if doNormalize==True:
 		matrix_Cov[i][j] /= hist_total.GetBinError(1+i)*hist_total.GetBinError(1+j)
+    #print matrix_Cov
     matrix_Cov_Inv = np.linalg.inv(matrix_Cov)
+    #print 'Check identity:'
+    identity = np.matmul(matrix_Cov_Inv,matrix_Cov)
+    #print identity
 
-    vect_Datafit = np.matrix([0,0,0,0])
-    vect_Datafit_T = np.matrix([0,0,0,0])
+    #vect_Datafit = np.matrix([0,0,0,0])
+    #vect_Datafit_T = np.matrix([0,0,0,0])
+    vect_Datafit = np.matrix(np.zeros(nkinbin))
+    vect_Datafit_T = np.matrix(np.zeros(nkinbin))
+    #vect_Datafit = np.zeros(nkinbin)
+    #vect_Datafit_T = np.zeros(nkinbin)
 
     #vect_Datafit = np.zeros((1,nkinbin))
     #vect_Datafit_T = np.zeros((nkinbin,1))
     for i in range(nkinbin):
+	#vect_Datafit[i] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
+	#vect_Datafit_T[i] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
 	vect_Datafit[0,i] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
         vect_Datafit_T[0,i] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
-	print str(vect_Datafit[0,i])+' '+str(vect_Datafit_T[0,i])
-	print str(hist_total.GetBinContent(1+i))
-	if doNormalize==True:
-	    vect_Datafit[0,i] = (hist_data.GetY()[i] - hist_total.GetBinContent(1+i))/hist_total.GetBinContent(1+i)
-	    vect_Datafit_T[0,i] = (hist_data.GetY()[i] - hist_total.GetBinContent(1+i))/hist_total.GetBinContent(1+i)
-	    print str(vect_Datafit[0,i])+' '+str(vect_Datafit_T[0,i])
+	#print str(vect_Datafit[0,i])+' '+str(vect_Datafit_T[0,i])
+	#print str(hist_total.GetBinContent(1+i))
+	#if doNormalize==True:
+	    #vect_Datafit[0,i] = (hist_data.GetY()[i] - hist_total.GetBinContent(1+i))/hist_total.GetBinContent(1+i)
+	    #vect_Datafit_T[0,i] = (hist_data.GetY()[i] - hist_total.GetBinContent(1+i))/hist_total.GetBinContent(1+i)
+	    #print str(vect_Datafit[0,i])+' '+str(vect_Datafit_T[0,i])
 	#vect_Datafit[0][i] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
 	#vect_Datafit_T[i][0] = hist_data.GetY()[i] - hist_total.GetBinContent(1+i)
     #vect_Datafit_T = vect_Datafit_T.transpose()
     vect_Datafit = vect_Datafit.transpose()
 
-    print vect_Datafit
-    print vect_Datafit_T
-    chi2 = (np.matmul(np.matmul(vect_Datafit_T,matrix_Cov_Inv),vect_Datafit))/nkinbin
-    
+    #print vect_Datafit
+    #print vect_Datafit_T
+    #print matrix_Cov_Inv
+    #chi2 = (np.matmul(np.matmul(vect_Datafit_T,matrix_Cov_Inv),vect_Datafit)) #/nkinbin
+    chi2 = np.matmul(vect_Datafit_T,np.matmul(matrix_Cov_Inv,vect_Datafit))    
+
     print 'chi2='+str(chi2)
     return chi2[0,0]
+    #return chi2
 
 def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_singletop, hist_vjets, hist_ttx, hist_dibosons, hist_total_covar):
  
@@ -648,7 +703,11 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
 
     epsilon_int = epsilon
     pad1 = TPad("pad1_int", "pad1_int", 0, r-epsilon_int, 1, 1)
+    pad1.SetLeftMargin(leftmargin)
+    pad1.SetRightMargin(0.01)
     pad1.SetBottomMargin(epsilon_int)
+    #pad1.SetTopMargin(2*gStyle.GetPadTopMargin()) #Was 1.5
+
     canvas.cd()
     if (doLog): pad1.SetLogy()
     pad1.Draw()
@@ -661,17 +720,26 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
     UncertaintyBandRatio.SetName("hist_total_int_bandratio")
     UncertaintyBandRatio.SetTitle("hist_total_int_bandratio")
 
-    legend_args = (0.005, 0.68, 0.105, 0.95, sfitkind, 'NDC')
-    legend = TLegend(*legend_args)
-    legend.AddEntry(hist_signal_int, "t#bar{t} SM", "f")
-    legend.AddEntry(hist_singletop_int, "single top", "f")
-    legend.AddEntry(hist_vjets_int, "W/Z+jets", "f")
-    legend.AddEntry(hist_dibosons_int, "Dibosons", "f")
-    legend.AddEntry(hist_ttx_int, "t#bar{t}+X", "f")
-    if (asimov!='asimov'):
-	legend.AddEntry(hist_data_int, "data")
+    if sfitkind=="Pre-fit":
+        sfitkind_corrected = "Prefit"
+    elif sfitkind == "Post-fit":
+	sfitkind_corrected = "Postfit"
     else:
-	legend.AddEntry(hist_data_int, "asimov")
+	sfitkind_corrected = sfitkind
+    legend_args = (0.005, 0.60, 0.1, 0.90, sfitkind_corrected, 'NDC')
+    #legend_args = (0.005, 0.68, 0.105, 0.95, sfitkind_corrected, 'NDC')
+    legend = TLegend(*legend_args)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.05)
+    legend.AddEntry(hist_signal_int, "t#bar{t} SM", "f")
+    legend.AddEntry(hist_singletop_int, "Single top", "f")
+    legend.AddEntry(hist_vjets_int, "W/Z+jets", "f")
+    legend.AddEntry(hist_dibosons_int, "Diboson", "f")
+    legend.AddEntry(hist_ttx_int, "t#bar{t}+X", "f")
+    if (fitkind_!='prefit_asimov'):
+	legend.AddEntry(hist_data_int, "Data","ep")
+    else:
+	legend.AddEntry(hist_data_int, "Asimov","ep")
 
     stack = THStack("THStack_int","THStack_int")
     stack.Add(hist_ttx_int)
@@ -692,20 +760,21 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
     legend.Draw("SAME")
 
     # line_color, line_width, fill_color, fill_style, marker_size, marker_style=1
-    style_histo(hist_signal_int, 2, 1, 2, 3004, 0)
-    style_histo(hist_singletop_int, 4, 1, 4, 3005, 0)
-    style_histo(hist_ttx_int, 8, 1, 8, 3005, 0)
-    style_histo(hist_dibosons_int, 42, 1, 42, 3005, 0)
-    style_histo(hist_vjets_int, 619, 1, 619, 3005, 0)
+    style_histo(hist_signal_int, 2, 1, 2, 3004, 0) #3004
+    style_histo(hist_singletop_int, 4, 1, 4, 3005, 0) #3005
+    style_histo(hist_ttx_int, 8, 1, 8, 3005, 0) #3005
+    style_histo(hist_dibosons_int, 42, 1, 42, 3005, 0) #3005
+    style_histo(hist_vjets_int, 619, 1, 619, 3005, 0) #3005
     style_histo(hist_data_int, 1, 1, 0, 3001, 1, 20)
 
     style_histo(UncertaintyBand, 1, 1, 1, 3002, 0)
     style_labels_counting(UncertaintyBand, 'Events', title)
     UncertaintyBand.GetXaxis().SetLabelSize(0)
     UncertaintyBand.GetXaxis().SetTitleSize(0)
+    UncertaintyBand.GetYaxis().SetTitleOffset(0.85)
 
     if year=='Comb':
-	line_year = TLine(24,0,24,stack.GetMaximum()*1.1)
+	line_year = TLine(24,0,24,stack.GetMaximum()*1.05)
 	line_year.SetLineStyle(9)
 	line_year.SetLineWidth(2)
 	line_year.SetLineColor(15)
@@ -728,6 +797,8 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
     pad2 = TPad("pad2_int", "pad2_int", 0, 0, 1, r*(1-epsilon_int))
     pad2.SetTopMargin(0)
     pad2.SetBottomMargin(0.4)
+    pad2.SetLeftMargin(leftmargin)
+    pad2.SetRightMargin(0.01)
     pad2.SetFillStyle(0)
     canvas.cd()
     pad2.Draw()
@@ -741,51 +812,88 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
     h_one.SetLineWidth(1)
     h_one.SetLineColor(1)
     h_num = hist_total_int.Clone()
+    ratio_coef_max = -99
+    ratio_coef_min = 99
     for i in range(nObsBins):
 	h_num.SetBinContent(i+1,hist_data_int.GetY()[i]/hist_total_int.GetBinContent(i+1))
 	h_num.SetBinError(i+1,hist_data_int.GetEYhigh()[i]/hist_total_int.GetBinContent(i+1))
+	if ratio_coef_min>(hist_data_int.GetY()[i]-hist_data_int.GetEYhigh()[i])/hist_total_int.GetBinContent(i+1):
+	    ratio_coef_min = (hist_data_int.GetY()[i]-hist_data_int.GetEYhigh()[i])/hist_total_int.GetBinContent(i+1)
+	if ratio_coef_max< (hist_data_int.GetY()[i]+hist_data_int.GetEYhigh()[i])/hist_total_int.GetBinContent(i+1):
+	    ratio_coef_max = (hist_data_int.GetY()[i]+hist_data_int.GetEYhigh()[i])/hist_total_int.GetBinContent(i+1)
     h_num.GetXaxis().SetTitle("aksjd_int")
+    print  'ratio_coef_min='+str(ratio_coef_min)+' ratio_coef_max='+str(ratio_coef_max)
 
-    h_one.Draw("SAME")
+    ratioplot_min = 0.7#ratio_coef_min-0.005
+    #ratioplot_max = #ratio_coef_max+0.005
+
+    #h_one.Draw("SAME")
     UncertaintyBandRatio.Draw("2A SAME")
     h_num.Draw("E SAME")
 
     style_histo(UncertaintyBandRatio, 1, 1, 1, 3002, 0)
     UncertaintyBandRatio.GetXaxis().SetRangeUser(0,nObsBins)
     UncertaintyBandRatio.SetMinimum(1-ratio_coef)
-    UncertaintyBandRatio.SetMaximum(1+ratio_coef)
+    UncertaintyBandRatio.SetMaximum(1+ratio_coef-0.01)
+    #UncertaintyBandRatio.SetMinimum(ratio_coef_min-0.005)
+    #UncertaintyBandRatio.SetMaximum(ratio_coef_max+0.005)
 
-    UncertaintyBandRatio.GetYaxis().SetTitle("Ratio data/mc")
+    UncertaintyBandRatio.GetYaxis().SetTitle("Data/MC")
     UncertaintyBandRatio.GetYaxis().SetMaxDigits(4)
     UncertaintyBandRatio.GetYaxis().CenterTitle()
     UncertaintyBandRatio.GetYaxis().SetLabelSize(0.1)
-    UncertaintyBandRatio.GetYaxis().SetTitleSize(0.1)
-    UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.3)
+    #UncertaintyBandRatio.GetYaxis().SetTitleSize(0.1)
+    #UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.3)
+    UncertaintyBandRatio.GetYaxis().SetTitleSize(0.12)
+    UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.39)
 
-    UncertaintyBandRatio.GetXaxis().SetTitle("sidereal time bin (h)")
+    UncertaintyBandRatio.GetXaxis().SetTitle("Sidereal time (h)")
     UncertaintyBandRatio.GetXaxis().SetMaxDigits(0)
     UncertaintyBandRatio.GetXaxis().CenterTitle()
     UncertaintyBandRatio.GetXaxis().SetLabelSize(0)#0.15)
     UncertaintyBandRatio.GetXaxis().SetTitleSize(0.17)
     UncertaintyBandRatio.GetXaxis().SetLabelOffset(0.01)
+    UncertaintyBandRatio.GetXaxis().SetTitleSize(0.12)
+    UncertaintyBandRatio.GetXaxis().SetTitleOffset(1.2)
 
     UncertaintyBandRatio.GetXaxis().SetNdivisions(nObsBins,False)
     UncertaintyBandRatio.GetXaxis().SetTickLength(0)#0.05)
     line_axis = []
     text_axis = []
     for i in range(0,nObsBins):
-	if i>=24:
-	    inew=i-24
-	else:
-	    inew=i
+        if i>=24:
+            inew=i-24
+        else:
+            inew=i
+	#inew = i
+	#if i>=24:
+	#    inew=i-24
+	#else:
+	#    inew=i
 	print str(i)
-	line_axis.append(TLine(i,0.75,i,0.65))
+        line_axis.append(TLine(i,ratioplot_min,i,ratioplot_min-0.05))
+	#line_axis.append(TLine(i,0.75,i,0.65))
 	line_axis[-1].Draw("SAME")
 	text_axis.append(TLatex())
-	text_axis[-1].SetTextSize(0.08)
-	text_axis[-1].DrawLatex(i-0.5,0.55,str(inew))
+	#text_axis[-1].SetTextSize(0.08)
+	#text_axis[-1].DrawLatex(i-0.5,0.55,str(inew))
+        text_axis[-1].SetTextSize(0.07)
+	if inew<10:
+            text_axis[-1].DrawLatex(i-0.2,ratioplot_min-0.12,str(inew))
+	if inew>=10:
+	    text_axis[-1].DrawLatex(i-0.4,ratioplot_min-0.12,str(inew))
 
-    resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+sfitkind+sasimov+'_integrated'
+        if year=='Comb':
+	    line_year2 = TLine(24,1-ratio_coef,24,1+ratio_coef-0.01)
+            #line_year2 = TLine(24,ratio_coef_min,24,ratio_coef_max-0.05)
+            line_year2.SetLineStyle(9)
+            line_year2.SetLineWidth(2)
+            line_year2.SetLineColor(15)
+            line_year2.Draw("SAME")
+
+
+    #resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+sfitkind+sasimov+'_integrated_normfit'
+    resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+fitkind_+'_integrated_normfit'
     canvas.SaveAs(resultname+'.pdf')
 
 def displayPrePostFitPlot(fitkind):
@@ -800,6 +908,14 @@ def displayPrePostFitPlot(fitkind):
 
 	pad1 = TPad("pad1", "pad1", 0, r-epsilon, 1, 1)
 	pad1.SetBottomMargin(epsilon)
+        pad1.SetLeftMargin(leftmargin)
+        pad1.SetRightMargin(0.01)
+	
+        tm = gStyle.GetPadTopMargin()
+        print 'TopMargin: '+str(tm)+' -> '+str(1.5*tm)
+        gStyle.SetPadTopMargin(2*tm) #Was 1.5
+        pad1.SetTopMargin(2*tm) #Was 1.5
+
 	canvas.cd()
 	if (doLog): pad1.SetLogy()
 	pad1.Draw()
@@ -824,7 +940,7 @@ def displayPrePostFitPlot(fitkind):
 		hist_ttx.append(getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/ch"+str(i+1)+"/ttx")))
 		hist_dibosons.append(getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/ch"+str(i+1)+"/dibosons")))
 		hist_total_covar.append(getHist2DWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/ch"+str(i+1)+"/total_covar")))
-		chi2_timebin.append(getChi2(hist_data[-1], hist_total[-1], hist_total_covar[-1]))
+		chi2_timebin.append(getChi2(hist_data[-1], hist_total[-1], hist_total_covar[-1], 4))
 	
 	hist_data_allbins = mergeGraph(hist_data)	
 	hist_total_allbins = mergeHisto(hist_total)
@@ -837,18 +953,35 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand = getUncertaintyBandGraph(hist_total_allbins)
 	UncertaintyBandRatio = getUncertaintyBandRatioGraph(hist_total_allbins)
 
-	legend_args = (0.005, 0.68, 0.105, 0.95, sfitkind, 'NDC')
+	hist_data_overall = getGraphWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/total_data"))
+	hist_total_overall = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/total_overall"))
+	hist_total_covar_overall = getHist2DWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/overall_total_covar"))
+	print 'nbins_overall='+str(hist_total_overall.GetNbinsX())
+	sumchi2_correl_Comb = getChi2(hist_data_overall, hist_total_overall, hist_total_covar_overall, nObsBins*4)
+	sumchi2_correl_Comb /= (nObsBins*4-24)
+        print 'sumchi2_correl_Comb='+str(sumchi2_correl_Comb)
+
+
+	if sfitkind=="Pre-fit":
+	    sfitkind_corrected = "Prefit"
+        elif sfitkind == "Post-fit":
+            sfitkind_corrected = "Postfit"
+        else:
+            sfitkind_corrected = sfitkind
+	legend_args = (0.005, 0.60, 0.1, 0.90, sfitkind_corrected, 'NDC')
 	legend = TLegend(*legend_args)
+	legend.SetBorderSize(0)
+	legend.SetTextSize(0.05)
 	legend.AddEntry(hist_signal_allbins, "t#bar{t} SM", "f")
 	#legend.AddEntry(hist_background_allbins, "non-t#bar{t}", "f")
-	legend.AddEntry(hist_singletop_allbins, "single top", "f")
+	legend.AddEntry(hist_singletop_allbins, "Single top", "f")
 	legend.AddEntry(hist_vjets_allbins, "W/Z+jets", "f")
-	legend.AddEntry(hist_dibosons_allbins, "Dibosons", "f")
+	legend.AddEntry(hist_dibosons_allbins, "Diboson", "f")
 	legend.AddEntry(hist_ttx_allbins, "t#bar{t}+X", "f")
-	if (asimov!='asimov'):
-	    legend.AddEntry(hist_data_allbins, "data")
+	if (fitkind_!='prefit_asimov'):
+	    legend.AddEntry(hist_data_allbins, "Data", "ep")
 	else:
-	    legend.AddEntry(hist_data_allbins, "asimov")
+	    legend.AddEntry(hist_data_allbins, "Asimov", "ep")
 
 	stack = THStack()
 	stack.Add(hist_ttx_allbins)
@@ -888,7 +1021,7 @@ def displayPrePostFitPlot(fitkind):
 	style_labels_counting(UncertaintyBand, 'Events', title)
 	UncertaintyBand.GetXaxis().SetLabelSize(0)
 	UncertaintyBand.GetXaxis().SetTitleSize(0)
-	#UncertaintyBand.SetTitleOffset(0.1)
+	UncertaintyBand.GetYaxis().SetTitleOffset(0.85)
 
         if year=='Comb':
             line_year = TLine(24*nbin,0,24*nbin,stack.GetMaximum()*1.1)
@@ -908,12 +1041,14 @@ def displayPrePostFitPlot(fitkind):
 	elif(year=='2017'):
 	   tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
 	elif (year=='Comb'):
-           tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=True)
+           tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=False)
 
 
 	pad2 = TPad("pad2", "pad2", 0, 0, 1, r*(1-epsilon))
 	pad2.SetTopMargin(0)
 	pad2.SetBottomMargin(0.4)
+        pad2.SetLeftMargin(leftmargin)
+        pad2.SetRightMargin(0.01)
 	pad2.SetFillStyle(0)
 	canvas.cd()
 	pad2.Draw()
@@ -930,14 +1065,22 @@ def displayPrePostFitPlot(fitkind):
 	#h_denom = hist_total_allbins
 	#h_num.Divide(h_denom)
 	h_num = hist_total_allbins.Clone()
+	ratio_coef_min = 99
+	ratio_coef_max = -99
 	for i in range(nbin*nObsBins):
 	    h_num.SetBinContent(i+1,hist_data_allbins.GetY()[i]/hist_total_allbins.GetBinContent(i+1))
 	    h_num.SetBinError(i+1,hist_data_allbins.GetEYhigh()[i]/hist_total_allbins.GetBinContent(i+1))
+            if ratio_coef_min>(hist_data_allbins.GetY()[i]-hist_data_allbins.GetEYhigh()[i])/hist_total_allbins.GetBinContent(i+1):
+                ratio_coef_min = (hist_data_allbins.GetY()[i]-hist_data_allbins.GetEYhigh()[i])/hist_total_allbins.GetBinContent(i+1)
+            if ratio_coef_max< (hist_data_allbins.GetY()[i]+hist_data_allbins.GetEYhigh()[i])/hist_total_allbins.GetBinContent(i+1):
+                ratio_coef_max = (hist_data_allbins.GetY()[i]+hist_data_allbins.GetEYhigh()[i])/hist_total_allbins.GetBinContent(i+1)
+        print  'ratio_coef_min='+str(ratio_coef_min)+' ratio_coef_max='+str(ratio_coef_max)
+
 	h_num.GetXaxis().SetTitle("aksjd")
 	#ratio = THStack()
 	#ratio.Add(h_num)
 
-	h_one.Draw("SAME")
+	#h_one.Draw("SAME")
 	UncertaintyBandRatio.Draw("2A SAME")
 	h_num.Draw("E SAME")
 	#h_one.Draw("SAME")
@@ -945,23 +1088,31 @@ def displayPrePostFitPlot(fitkind):
 	style_histo(UncertaintyBandRatio, 1, 1, 1, 3002, 0)
 	UncertaintyBandRatio.GetXaxis().SetRangeUser(min_bin,max_bin*nObsBins)
 	#UncertaintyBandRatio.GetXaxis().SetRangeUser(0,nObsBins)
-	UncertaintyBandRatio.SetMinimum(1-ratio_coef)
-	UncertaintyBandRatio.SetMaximum(1+ratio_coef)
+	#if sfitkind!="Pre-fit":
+	#    UncertaintyBandRatio.SetMinimum(1-ratio_coef)
+	#    UncertaintyBandRatio.SetMaximum(1+ratio_coef-0.01)
+	#    ratioplot_min = ratio_coef
+	#else:
+	UncertaintyBandRatio.SetMinimum(ratio_coef_min-0.005)
+        UncertaintyBandRatio.SetMaximum(ratio_coef_max+0.005)
+	ratioplot_min = ratio_coef_min-0.005
+	ratioplot_max = ratio_coef_max+0.005
 
 	#style_labels_counting(h_one, 'Ratio data/mc', title)
 	#style_labels_counting(UncertaintyBandRatio, 'Ratio data/mc', title)
-	UncertaintyBandRatio.GetYaxis().SetTitle("Ratio data/mc")
+	UncertaintyBandRatio.GetYaxis().SetTitle("Data/MC")
         UncertaintyBandRatio.GetYaxis().SetMaxDigits(4)
 	UncertaintyBandRatio.GetYaxis().CenterTitle()
 	UncertaintyBandRatio.GetYaxis().SetLabelSize(0.1)
-	UncertaintyBandRatio.GetYaxis().SetTitleSize(0.1)
-	UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.3)
+	UncertaintyBandRatio.GetYaxis().SetTitleSize(0.12)
+	UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.39)
 
         UncertaintyBandRatio.GetXaxis().SetTitle(title)
         UncertaintyBandRatio.GetXaxis().SetMaxDigits(0)
         UncertaintyBandRatio.GetXaxis().CenterTitle()
 	UncertaintyBandRatio.GetXaxis().SetLabelSize(0)#0.15)
-	UncertaintyBandRatio.GetXaxis().SetTitleSize(0.17)
+	UncertaintyBandRatio.GetXaxis().SetTitleSize(0.12)
+        UncertaintyBandRatio.GetXaxis().SetTitleOffset(1.2)
 	UncertaintyBandRatio.GetXaxis().SetLabelOffset(0.01)
 
         #UncertaintyBandRatio.GetXaxis().SetNdivisions(nObsBins,True)
@@ -981,18 +1132,29 @@ def displayPrePostFitPlot(fitkind):
 	    else:
 		inew=i
 	    print str(i)
-	    line_axis.append(TLine(i*nbin,0.75,i*nbin,0.65))
+	    line_axis.append(TLine(i*nbin,ratioplot_min,i*nbin,ratioplot_min-0.1))
             #line_axis[i].SetLineStyle(9)
             #line_axis[-1].SetLineWidth(2)
             #line_axis[i].SetLineColor(11)
             line_axis[-1].Draw("SAME")
             text_axis.append(TLatex())
-            text_axis[-1].SetTextSize(0.08)
-	    text_axis[-1].DrawLatex(i*nbin-0.5,0.55,str(inew))
+            text_axis[-1].SetTextSize(0.07)
+	    if inew<10:
+	        text_axis[-1].DrawLatex(i*nbin-0.55,ratioplot_min-0.25,str(inew))
+	    if inew>=10:
+		 text_axis[-1].DrawLatex(i*nbin-1.55,ratioplot_min-0.25,str(inew))
 	#line_axis_last = TLine(23*nbin,0.7,23*nbin,0.65)
 	#line_axis_last.Draw("SAME")
 
-        resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+sfitkind+sasimov
+        if year=='Comb':
+            line_year2 = TLine(24*nbin,ratio_coef_min,24*nbin,ratio_coef_max-0.05)
+            line_year2.SetLineStyle(9)
+            line_year2.SetLineWidth(2)
+            line_year2.SetLineColor(15)
+            line_year2.Draw("SAME")
+
+        #resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+sfitkind+sasimov+'_normfit'
+	resultname = './impacts/'+year+'/'+observable+'_'+year+'_'+fitkind_+'_normfit'
         canvas.SaveAs(resultname+'.pdf')
 
         #   UncertaintyBandRatio.GetXaxis().SetBinLabel(1+i*nbin,str(i))
@@ -1013,34 +1175,44 @@ def displayPrePostFitPlot(fitkind):
 	#CHI2 PLOTS
 	sumchi2_2016 = 0
 	sumchi2_2017 = 0
+	sumchi2_Comb = 0
 	print chi2_timebin 
 	for i in range(nObsBins):
+	    sumchi2_Comb += chi2_timebin[i]
 	    if i<nObsBins/2:
 		sumchi2_2016 += chi2_timebin[i]
 	    else:
 		sumchi2_2017 += chi2_timebin[i]
-	sumchi2_2016 /= (nObsBins/2*4)
-	sumchi2_2017 /= (nObsBins/2*4)
+	sumchi2_2016 /= (nObsBins/2*4-24)
+	sumchi2_2017 /= (nObsBins/2*4-24)
+	sumchi2_Comb /= (nObsBins*4-24)
 	print 'sumchi2_2016='+str(sumchi2_2016)
         print 'sumchi2_2017='+str(sumchi2_2017)
+	print 'sumchi2_Comb='+str(sumchi2_Comb)
 
-        canvasChi2 = TCanvas('Chi2 in time bins','Chi2 in time bins',800,600)
-	hist_chi2_2016 = TH1F("hist_chi2_2016","hist_chi2_2016",10,0,200)
-        hist_chi2_2017 = TH1F("hist_chi2_2017","hist_chi2_2017",10,0,200)
-	for i in range(nObsBins):
-	    if i<nObsBins/2:
-		hist_chi2_2016.Fill(chi2_timebin[i])
-	    else:
-		hist_chi2_2017.Fill(chi2_timebin[i])
-	hist_chi2_2016.SetLineColor(2)
-	hist_chi2_2017.SetLineColor(8)
-	hist_chi2_2016.Draw("HIST")
-	hist_chi2_2017.Draw("HISTsame")	
-	canvasChi2.SaveAs('./impacts/'+year+'/chi2_'+observable+'_'+year+'_'+sfitkind+sasimov+'.pdf')
+	doChi2plot = False
+	if doChi2plot==True:
+	    canvasChi2 = TCanvas('Chi2 in time bins','Chi2 in time bins',800,600)
+	    hist_chi2_2016 = TH1F("hist_chi2_2016","hist_chi2_2016",10,0,200)
+	    hist_chi2_2017 = TH1F("hist_chi2_2017","hist_chi2_2017",10,0,200)
+	    for i in range(nObsBins):
+		if i<nObsBins/2:
+		    hist_chi2_2016.Fill(chi2_timebin[i]/nbin)
+		else:
+		    hist_chi2_2017.Fill(chi2_timebin[i]/nbin)
+	    hist_chi2_2016.SetLineColor(2)
+	    hist_chi2_2017.SetLineColor(8)
+	    hist_chi2_2016.Draw("HIST")
+	    hist_chi2_2017.Draw("HISTsame")	
+	    #canvasChi2.SaveAs('./impacts/'+year+'/chi2_'+observable+'_'+year+'_'+sfitkind+sasimov+'_normfit.pdf')
+	    canvasChi2.SaveAs('./impacts/'+year+'/chi2_'+observable+'_'+year+'_'+fitkind_+'_normfit.pdf')
 
-        getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_singletop, hist_vjets, hist_ttx, hist_dibosons, hist_total_covar)
+	doIntegratedPlot = True
+	if doIntegratedPlot:
+	    getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_singletop, hist_vjets, hist_ttx, hist_dibosons, hist_total_covar)
 
-#displayPrePostFitPlot("prefit")
+if asimov=="asimov":
+    displayPrePostFitPlot("prefit")
 if asimov=="data":
     displayPrePostFitPlot("fit_s")
 

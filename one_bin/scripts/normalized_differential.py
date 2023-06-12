@@ -9,7 +9,7 @@ from tools.style_manager import *
 
 from ROOT import TFile, TH1, TCanvas, TH1F, TH2F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
-from ROOT import TGraphAsymmErrors
+from ROOT import TLine,TGraphAsymmErrors
 from ROOT import gStyle
 
 import tools.tdrstyle as tdr
@@ -115,7 +115,7 @@ def plot2Dmatrix(hCov, palette, title):
     palette.SetY2NDC(0.9)
     hCov.Draw("COLZTEXT")
     #raw_input()
-    canvas.Print("impacts/"+title+"SignalStrength_"+observable+"_"+year+".pdf")
+    canvas.Print("impacts/"+title+"SignalStrength_"+observable+"_"+year+"_"+asimov+".pdf")
 
 plot2Dmatrix(hCovPOI, hCov.GetListOfFunctions().FindObject("palette"), "CorrelationMatrix")
 
@@ -209,6 +209,12 @@ TH1.SetDefaultSumw2(1)
 canvas = TCanvas('Averaged differential cross section','Averaged differential cross section', 800, 700)
 canvas.UseCurrentStyle()
 
+#histSM = TH1F('histSM','histSM',24,0,24)
+#for i in range(24):
+#    histSM.Fill(i+1,1)
+#histSM.SetLineColor(2)
+#histSM.SetLineWidth(2)
+
 y = np.array(mu_norm, dtype='double')
 x = np.array([i+0.5 for i in range(24)], dtype='double')
 
@@ -225,18 +231,34 @@ hist  = TGraphAsymmErrors(24, x, y ,
                           error_left, error_right,
                           error_down, error_up)
 
-hist.GetYaxis().SetTitle('Averaged t#bar{t} differential cross section')
+#histSM = TH1F('histSM','histSM',24,0,24)
+#for i in range(24):
+#    histSM.Fill(i+1,1)
+#histSM.SetLineColor(3)
+#histSM.SetLineWidth(2)
+lineSM = TLine(0,1,24,1)
+lineSM.SetLineWidth(2)
+lineSM.SetLineColor(2)
+#lineSM.Draw()
+
+#titleYaxis = 'Averaged t#bar{t} differential cross section'
+titleYaxis = '1/(#sigma_{t#bar{t}}/24) d#sigma_{t#bar{t}}/dt (h^{-1})'
+hist.GetYaxis().SetTitle(titleYaxis)
 legend = TLegend(0.5,0.93,0.9,0.8)
 
 if (asimov=='asimov'):
-    slegend = 'Asimov fit '+year
+    slegendFit = 'Asimov fit '+year
 else:
-    slegend = 'Data fit '+year
+    slegendFit = 'Data'
 #legend.SetHeader(slegend, 'C')
-legend.AddEntry(hist, slegend, 'lep')
+legend.AddEntry(lineSM, 'SM predictions', 'l')
+legend.AddEntry(hist, slegendFit, 'lep')
 #legend.AddEntry(hist, 'Averaged t#bar{t} differential cross section', 'lep')
 
+#lineSM.Draw()
 hist.Draw("ap")
+#histSM.Draw("HISTsame")
+lineSM.Draw("SAME")
 legend.Draw("SAME")
 
 
@@ -264,12 +286,18 @@ if(is_center):
 style_histo(hist,   1, 2, 4, 3005, 1,20)
 hist.SetMarkerColor(1)
 
+
+if asimov=='asimov':
+    sim=True
+else:
+    sim=False
+
 if(year=='2016'):
-    tdr.cmsPrel(35900., 13.)
+    tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
 elif(year=='2017'):
-    tdr.cmsPrel(41530., 13.)
+    tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
 elif(year=='Comb'):
-    tdr.cmsPrel(77400,13.)
+    tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=True)
 
 if asimov=='asimov':
     sasimov='asimov'

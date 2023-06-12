@@ -43,7 +43,8 @@ def cmsPrel(lumi,  energy=None,  simOnly=True,  onLeft=True,  sp=0, textScale=1.
   latex.SetName("lumiText")
   latex.SetTextFont(42)
     
-  lumyloc = 0.965
+  #lumyloc = 0.965 #Changed for paper v4
+  lumyloc = 0.95
   #cmsyloc = 0.893
   #simyloc = 0.858
   cmsyloc = lumyloc
@@ -53,11 +54,13 @@ def cmsPrel(lumi,  energy=None,  simOnly=True,  onLeft=True,  sp=0, textScale=1.
     cmsyloc = 0.85
     simyloc = 0.8
   cmsalign = 31
-  cmsxloc = 0.924
+  #cmsxloc = 0.924 #Changed for paper v4
+  cmsxloc = 0.9
   if onLeft:
     cmsalign = 11
     cmsxloc = 0.254
-    simxloc = 0.334
+    #simxloc = 0.334 #Changed for paper v4
+    simxloc = 0.36
   xlumi = 1-rt.gStyle.GetPadRightMargin() - xoffset
   if (lumi > 0.):
     latex.SetTextAlign(31) # align left, right=31

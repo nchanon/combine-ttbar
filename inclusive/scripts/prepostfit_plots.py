@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 parser.add_argument('asimov',nargs='?', help='set if asimov test', default='')
-parser.add_argument('title', help='display your observable title')
+parser.add_argument('title', help='display your observable title') # number of b jets
 parser.add_argument('timebin', help='display the time bin')
 
 args = parser.parse_args()
@@ -63,12 +63,12 @@ else:
 #    else:
 #        return ''
 
-doPrePostFitOnly = True
-#doPrePostFitOnly = False
+#doPrePostFitOnly = True
+doPrePostFitOnly = False
 
 
 #fitkind = 'prefit'
-fitkind = 'fit_s'
+#fitkind = 'fit_s'
 
 #if (fitkind=='prefit'):
 #    sfitkind = "Pre-fit"
@@ -112,7 +112,7 @@ print '-------------------------'
 #        os.system('mv *Impact_'+year+'*.root  impacts/'+year+'/')
 
 if (doPrePostFitOnly==True):
-    if (fitkind=='prefit'):
+    if (asimov=='asimov'):
 	finput = 'inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root'
     else:
         cmd2 = 'combine -M MultiDimFit -n .snapshot_'+year+stimebin+'_'+asimov+' --robustFit 1 '
@@ -125,6 +125,7 @@ if (doPrePostFitOnly==True):
 	finput = "higgsCombine.snapshot_"+year+stimebin+"_"+asimov+".MultiDimFit.mH120.root --snapshotName MultiDimFit"
 
     cmd5 = 'combineTool.py -M FitDiagnostics '+finput+' -m 125 --rMin 0 --rMax 10 --cminDefaultMinimizerStrategy 0 --saveShapes --saveWithUncertainties '
+    #cmd5 += asi
     cmd5 += ' --skipBOnlyFit --plots'
     cmd5 += ' -n .'+observable+'_inclusive'+stimebin+'_'+year
     os.system('echo using the root file : inputs/'+observable+'_inclusive'+stimebin+'_workspace_'+year+'.root ' )
@@ -140,30 +141,31 @@ fDiagnostics = TFile('fitDiagnostics.'+observable+'_inclusive'+stimebin+'_'+year
 ## Correlation plot
 ###################
 
-#if (doPrePostFitOnly==True):
-gStyle.SetPalette(55)
-gStyle.SetOptStat(0)
+doCorrPlot = True
+if doCorrPlot:
+    gStyle.SetPalette(55)
+    gStyle.SetOptStat(0)
 
-canvas = TCanvas('CorrelationMatrix','CorrelationMatrix',1000,800)
-pad = TPad("pad","pad",0,0,1,1)
-pad.SetLeftMargin(0.16)
-pad.SetBottomMargin(0.2)
-pad.SetRightMargin(0.1)
-pad.Draw()
-pad.cd()
-hCov = fDiagnostics.Get("covariance_fit_s")
-hCov.GetXaxis().LabelsOption("v")
-hCov.GetXaxis().SetLabelSize(0.025)
-hCov.GetYaxis().SetLabelSize(0.025)
-hCov.GetZaxis().SetLabelSize(0.025)
-hCov.SetTitle("Systematics correlation matrix, "+year)
-palette = hCov.GetListOfFunctions().FindObject("palette")
-palette.SetX1NDC(0.92)
-palette.SetX2NDC(0.94)
-palette.SetY1NDC(0.2)
-palette.SetY2NDC(0.9)
-hCov.Draw("COLZ")
-canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+stimebin+".pdf")
+    canvas = TCanvas('CorrelationMatrix','CorrelationMatrix',1000,800)
+    pad = TPad("pad","pad",0,0,1,1)
+    pad.SetLeftMargin(0.16)
+    pad.SetBottomMargin(0.2)
+    pad.SetRightMargin(0.1)
+    pad.Draw()
+    pad.cd()
+    hCov = fDiagnostics.Get("covariance_fit_s")
+    hCov.GetXaxis().LabelsOption("v")
+    hCov.GetXaxis().SetLabelSize(0.025)
+    hCov.GetYaxis().SetLabelSize(0.025)
+    hCov.GetZaxis().SetLabelSize(0.025)
+    hCov.SetTitle("Systematics correlation matrix, "+year)
+    palette = hCov.GetListOfFunctions().FindObject("palette")
+    palette.SetX1NDC(0.92)
+    palette.SetX2NDC(0.94)
+    palette.SetY1NDC(0.2)
+    palette.SetY2NDC(0.9)
+    hCov.Draw("COLZ")
+    canvas.Print("impacts/CorrelationMatrixParameters_"+observable+"_"+year+stimebin+".pdf")
 
 ###################
 ## Pre-fit plot
@@ -286,6 +288,12 @@ def displayPrePostFitPlot(fitkind):
 
 	pad1 = TPad("pad1", "pad1", 0, r-epsilon, 1, 1)
 	pad1.SetBottomMargin(epsilon)
+
+        tm = gStyle.GetPadTopMargin()
+        print 'TopMargin: '+str(tm)+' -> '+str(1.5*tm)
+        gStyle.SetPadTopMargin(1.5*tm) #Was 1.5
+        pad1.SetTopMargin(1.5*tm) #Was 1.5
+
 	canvas.cd()
 	if (doLog): pad1.SetLogy()
 	pad1.Draw()
@@ -301,15 +309,20 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand = getUncertaintyBandGraph(hist_total)
 	UncertaintyBandRatio = getUncertaintyBandRatioGraph(hist_total)
 
-	legend_args = (0.645, 0.65, 0.85, 0.92, sfitkind, 'NDC')
+	if sfitkind=="Pre-fit":
+	    sfitkind_corrected = "Prefit"
+	legend_args = (0.645, 0.56, 0.85, 0.9, sfitkind_corrected, 'NDC')
+	#legend_args = (0.645, 0.65, 0.85, 0.92, sfitkind_corrected, 'NDC')
 	legend = TLegend(*legend_args)
+	legend.SetTextSize(0.05)
+	legend.SetBorderSize(0)
 	legend.AddEntry(hist_signal, "t#bar{t} SM", "f")
 	#legend.AddEntry(hist_background, "non-t#bar{t}", "f")
-	legend.AddEntry(hist_singletop, "single top", "f")
+	legend.AddEntry(hist_singletop, "Single top", "f")
 	legend.AddEntry(hist_vjets, "W/Z+jets", "f")
-	legend.AddEntry(hist_dibosons, "Dibosons", "f")
+	legend.AddEntry(hist_dibosons, "Diboson", "f")
 	legend.AddEntry(hist_ttx, "t#bar{t}+X", "f")
-	legend.AddEntry(hist_data, "data")
+	legend.AddEntry(hist_data, "Data","ep")
 
 	stack = THStack()
 	stack.Add(hist_ttx)
@@ -319,24 +332,37 @@ def displayPrePostFitPlot(fitkind):
 	stack.Add(hist_signal)
 	if (doLog): stack.SetMinimum(10)
 
-	UncertaintyBand.GetXaxis().SetRangeUser(min_bin,max_bin)
+	UncertaintyBand.GetXaxis().SetLimits(min_bin,max_bin)
+	#UncertaintyBand.GetXaxis().SetRangeUser(min_bin,max_bin)
 	UncertaintyBand.SetMinimum(0)
 	if (doLog): UncertaintyBand.SetMinimum(10)
 
 	stack.Draw()
+	UncertaintyBand.GetYaxis().SetTitleOffset(0.95)
 	UncertaintyBand.Draw("2AP SAME")
 	stack.Draw("HIST SAME")
 	hist_data.Draw("PSAME")
 	legend.Draw("SAME")
 
 	# line_color, line_width, fill_color, fill_style, marker_size, marker_style=1
-	style_histo(hist_signal, 2, 1, 2, 3004, 0)
-	style_histo(hist_singletop, 4, 1, 4, 3005, 0)
-	style_histo(hist_ttx, 8, 1, 8, 3005, 0)
-	style_histo(hist_dibosons, 42, 1, 42, 3005, 0)
-	style_histo(hist_vjets, 619, 1, 619, 3005, 0)
-	#style_histo(hist_background, 4, 1, 4, 3005, 0)
+	#hist_signal.SetLineColor(2)
+        #hist_signal.SetFillColor(2)
+	#hist_singletop.SetLineColor(4)
+        #hist_singletop.SetFillColor(4)
+	#hist_ttx.SetLineColor(8)
+        #hist_ttx.SetFillColor(8)
+	#hist_dibosons.SetLineColor(42)
+        #hist_dibosons.SetFillColor(42)
+	#hist_vjets.SetLineColor(619)
+        #hist_vjets.SetFillColor(619)
+	#gStyle.SetHatchesSpacing(0.001)
+	style_histo(hist_signal, 2, 1, 2, 3002, 0) #3004
+	style_histo(hist_singletop, 4, 1, 4, 3002, 0) #3005
+	style_histo(hist_ttx, 8, 1, 8, 3002, 0) #3005
+	style_histo(hist_dibosons, 42, 1, 42, 3002, 0) #3005
+	style_histo(hist_vjets, 619, 1, 619, 3002, 0) #3005
 	style_histo(hist_data, 1, 1, 0, 3001, 1, 20)
+
 
 	style_histo(UncertaintyBand, 1, 1, 1, 3005, 0)
 	style_labels_counting(UncertaintyBand, 'Events', title)
@@ -344,9 +370,9 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand.GetXaxis().SetTitleSize(0)
 
 	if(year=='2016'):
-	    tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=True)
+	    tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=False)
 	elif(year=='2017'):
-	   tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
+	   tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=False)
 
 	pad2 = TPad("pad2", "pad2", 0, 0, 1, r*(1-epsilon))
 	pad2.SetTopMargin(0)
@@ -373,6 +399,7 @@ def displayPrePostFitPlot(fitkind):
 	ratio = THStack()
 	ratio.Add(h_num)
 
+        UncertaintyBandRatio.GetXaxis().SetLimits(min_bin,max_bin)
 	UncertaintyBandRatio.Draw("2A SAME")
 	h_num.Draw("E SAME")
 	h_one.Draw("SAME")
@@ -380,12 +407,12 @@ def displayPrePostFitPlot(fitkind):
 	style_histo(UncertaintyBandRatio, 1, 1, 1, 3005, 0)
 	UncertaintyBandRatio.GetXaxis().SetRangeUser(min_bin,max_bin)
 	UncertaintyBandRatio.SetMinimum(1-ratio_coef)
-	UncertaintyBandRatio.SetMaximum(1+ratio_coef)
+	UncertaintyBandRatio.SetMaximum(1+ratio_coef-0.01)
 
-	style_labels_counting(UncertaintyBandRatio, 'Ratio data/mc', title)
-	UncertaintyBandRatio.GetYaxis().SetLabelSize(0.1)
-	UncertaintyBandRatio.GetYaxis().SetTitleSize(0.1)
-	UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.5)
+	style_labels_counting(UncertaintyBandRatio, 'Data/MC', title)
+	UncertaintyBandRatio.GetYaxis().SetLabelSize(0.13)
+	UncertaintyBandRatio.GetYaxis().SetTitleSize(0.15)
+	UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.4)
 	UncertaintyBandRatio.GetXaxis().SetLabelSize(0.15)
 	UncertaintyBandRatio.GetXaxis().SetTitleSize(0.17)
 	UncertaintyBandRatio.GetXaxis().SetLabelOffset(0.01)
@@ -393,8 +420,10 @@ def displayPrePostFitPlot(fitkind):
 	resultname = './impacts/'+year+'/'+observable+'_'+year+stimebin+'_'+sfitkind
 	canvas.SaveAs(resultname+'.pdf')
 
-displayPrePostFitPlot("prefit")
-displayPrePostFitPlot("fit_s")
+if asimov=="asimov":
+    displayPrePostFitPlot("prefit")
+if asimov=="data":
+    displayPrePostFitPlot("fit_s")
 
 raw_input('exit')
     
