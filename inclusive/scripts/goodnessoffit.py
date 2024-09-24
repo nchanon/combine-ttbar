@@ -63,8 +63,8 @@ if (timebin>=0):
 #        return ''
 
 
-#doFit = False
-doFit = True
+doFit = False
+#doFit = True
 
 rbin='r'
 r_range='0.8,1.2'
@@ -139,11 +139,11 @@ latex.DrawLatex(0.7,0.65,"p-value: "+str(round(pvalue,3)));
 
 
 if(year=='2016'):
-    tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=True)
+    tdr.cmsPrel(36300., 13.,simOnly=False,thisIsPrelim=True)
 elif(year=='2017'):
     tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
 elif (year=='Comb'):
-    tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=True)
+    tdr.cmsPrel(77800., 13.,simOnly=False,thisIsPrelim=True)
 
 
 Canvas.SaveAs('impacts/'+year+'/goodnessOfFit_'+observable+'_'+year+stimebin+'.pdf')

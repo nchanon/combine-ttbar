@@ -17,8 +17,8 @@ from ROOT import gStyle, gROOT
 import tools.tdrstyleNew as tdr
 tdr.setTDRStyle()
 
-#doPlotsOnly = True
-doPlotsOnly = False
+doPlotsOnly = True
+#doPlotsOnly = False
 
 doRobustFit = True
 
@@ -31,12 +31,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('observable', help='display your observable')
 parser.add_argument('year', help='year of samples')
 parser.add_argument('nuisancegroup', help='nuisance group', default='')
-parser.add_argument('wilson', help='display your wilson coefficient', default='sme_all')
+parser.add_argument('step', help='fit step', default='all')
 parser.add_argument('asimov',nargs='?', help='set if asimov test', default='asimov')
 
 args = parser.parse_args()
 observable = args.observable
-wilson_ = args.wilson
+step = args.step
 asimov = args.asimov
 year = args.year
 nuisancegroup = args.nuisancegroup
@@ -358,7 +358,7 @@ for wilsonserie in wilson_list_all:
     #cmd1 += asimov_param(wilson) + ' --algo grid --points '+str(npoints)
 
     #Snaphsot
-    cmd2 = 'combine -M MultiDimFit -n .snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov
+    cmd2 = 'combine -M MultiDimFit -n .snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov
     cmd2 += ' --algo=singles '+optim#--robustFit 1 '
     cmd2 +=' -d ./inputs/'+observable+'_'+wilsonserie+'_workspace_'+year+'.root ' 
     cmd2 += asimov_param(wilsonlist) +' --saveWorkspace'
@@ -367,18 +367,18 @@ for wilsonserie in wilson_list_all:
     #cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot.MultiDimFit.mH120.root -n .freezeMCStats '+asimov_param(wilson)+' --algo grid --points 30 --freezeNuisanceGroups autoMCStats --snapshotName MultiDimFit'
 
     #Stat. uncertainty only
-    cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '
+    cmd3 = 'combine -M MultiDimFit higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov+'.MultiDimFit.mH120.root '
     cmd3 += ' --algo=singles '+ optim
-    cmd3 += '-n .freezeall_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov +' '
+    cmd3 += '-n .freezeall_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov +' '
     cmd3 += asimov_param(wilsonlist) #+' --algo grid --points '+str(npoints*5)+' '
     cmd3 += ' --freezeParameters allConstrainedNuisances --snapshotName MultiDimFit'
 
     #Fit removing group uncertainties
     cmd4 = []
     for k in range(len(list_nuisgroups)):
-        cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root '
+        cmd_k = 'combine -M MultiDimFit higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov+'.MultiDimFit.mH120.root '
 	cmd_k += ' --algo=singles '+optim
-	cmd_k += '-n .freeze_othersfloating_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov +' '
+	cmd_k += '-n .freeze_othersfloating_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov +' '
 	cmd_k += asimov_param(wilsonlist) #+' --algo grid --points '+str(npoints*3)+' '
         if (list_nuisgroups[k]=='autoMCStats'):
             cmd_k += ' --freezeNuisanceGroups '+list_nuisgroups[k]+' --snapshotName MultiDimFit'
@@ -408,15 +408,22 @@ for wilsonserie in wilson_list_all:
     '''
 
     if (doPlotsOnly==False):
-        print cmd2
-        os.system(cmd2)
-        print cmd3
-        os.system(cmd3)
-        for k in range(len(list_nuisgroups)):
-            print cmd4[k]
-            os.system(cmd4[k])
+	if step=='all' or step=='0':
+            print cmd2
+            os.system(cmd2)
+	if step=='all' or step=='1':
+            print cmd3
+            os.system(cmd3)
+	if step=='all':
+            for k in range(len(list_nuisgroups)):
+                print cmd4[k]
+                os.system(cmd4[k])
+	if step!='all' and step!='0' and step!='1':
+	    print cmd4[int(step)-2]
+	    os.system(cmd4[int(step)-2])
 
-#exit()
+if doPlotsOnly==False:
+    exit()
 
 ###################
 ## Getting uncertainties
@@ -469,11 +476,11 @@ for k in range(len(list_nuisnames)):
 	wilsonserienum =getWilsonserieNum(wilsonserie)
 	
 	if k==0: 
-	    filein = TFile('higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root')
+	    filein = TFile('higgsCombine.snapshot_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov+'.MultiDimFit.mH120.root')
 	if k>0 and k<len(list_nuisnames)-1:
-	    filein = TFile('higgsCombine.freeze_othersfloating_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root')
+	    filein = TFile('higgsCombine.freeze_othersfloating_'+list_nuisnames[k]+'_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov+'.MultiDimFit.mH120.root')
 	if k==len(list_nuisnames)-1:
-	    filein = TFile('higgsCombine.freezeall_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_'+NuisanceGroup+'_'+asimov+'.MultiDimFit.mH120.root')
+	    filein = TFile('higgsCombine.freezeall_othersfloating_'+observable+'_'+year+'_'+wilsonserie+'_robustfit_'+asimov+'.MultiDimFit.mH120.root')
 
 	tResult = filein.Get("limit")
 
@@ -731,7 +738,7 @@ for k in range(len(list_nuisnames)):
         if k==0:
             h_uncertUp[k].SetMinimum(plotYmin)
             h_uncertUp[k].SetMaximum(plotYmax)
-            h_uncertUp[k].SetYTitle("Uncertainty on Wilson coefficient")
+            h_uncertUp[k].SetYTitle("Uncertainty on SME coefficient")
             #h_uncertUp[k].SetXTitle("Wilson")
 	    h_uncertUp[k].GetXaxis().SetLabelSize(0.06)
 	    for j in range(len(individual_uncert_up_allbins)):

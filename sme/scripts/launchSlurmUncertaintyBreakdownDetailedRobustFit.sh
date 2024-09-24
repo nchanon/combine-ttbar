@@ -8,18 +8,21 @@
 for year in Comb
 do
     #for wilson in sme_all
-    for wilson in cLXX cLXY cLXZ cLYZ cRXX cRXY cRXZ cRYZ cXX cXY cXZ cYZ dXX dXY dXZ dYZ
+    #for wilson in cLXX cLXY cLXZ cLYZ cRXX cRXY cRXZ cRYZ cXX cXY cXZ cYZ dXX dXY dXZ dYZ
     #for wilson in cXX cXY cXZ cYZ dXX dXY dXZ dYZ
-    do
-	for breakdown in "timeNew"
+    #do
+    for breakdown in "timeNew"
 	#for breakdown in "smedecay"
 	#for breakdown in "timeNew" "kind" "exp" "theory" "smedecay" #"putrigsmedecay"
+    do
+	#for step in '0'
+	for step in '2' '3' '4' #'1'
 	do
 	    for asi in data
 	    #for asi in asimov data #injectiontest
 	    do
 		
-		sbatch -p long scripts/slurm_UncertaintyBreakdownDetailed_othersfloating.sh ${year} ${breakdown} ${wilson} ${asi}
+		sbatch -p long scripts/slurm_UncertaintyBreakdownDetailed_othersfloating_robustfit.sh ${year} ${breakdown} ${step} ${asi}
 	        #sbatch scripts/slurm_UncertaintyBreakdownDetailed_new.sh ${year} ${breakdown} ${wilson} ${asi}
                 #sbatch scripts/slurm_UncertaintyBreakdownDetailed_new.sh ${year} ${breakdown} ${wilson} injectiontest
 	        echo ${year} ${breakdown} ${wilson} ${asi}

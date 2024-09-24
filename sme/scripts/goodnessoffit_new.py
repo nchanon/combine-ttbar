@@ -206,11 +206,11 @@ if ntoys==100 or doFit==False:
 
 
     if(year=='2016'):
-	tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=True)
+	tdr.cmsPrel(36300., 13.,simOnly=False,thisIsPrelim=True)
     elif(year=='2017'):
 	tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
     elif (year=='Comb'):
-	tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=True)
+	tdr.cmsPrel(77800., 13.,simOnly=False,thisIsPrelim=True)
 
 
     Canvas.SaveAs('impacts/'+year+'/goodnessOfFit_'+observable+'_'+year+'_'+wilsonserie+'.pdf')

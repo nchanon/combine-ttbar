@@ -181,6 +181,7 @@ fDiagnostics = TFile('fitDiagnostics.prefit_'+observable+'_'+year+'_'+fitkind_+'
 ## Nuisances checks
 ###################
 
+#doPull=True
 doPull=False
 
 if doPull==True:
@@ -354,7 +355,7 @@ if doPull==True:
 	#canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+asimov+'_normfit_'+str(j)+'.pdf')
 	canvas.SaveAs('nuis_pulled_'+'prefit_'+observable+'_'+year+'_'+poi+'_'+fitkind_+'_normfit_'+str(j)+'.pdf')
 
-#raw_input()
+	raw_input()
 #sys.exit()
 
 
@@ -787,11 +788,11 @@ def getPlotIntegratedOverObs(fitkind, hist_data, hist_total, hist_signal, hist_s
 	text_2017.DrawLatex(36,stack.GetMaximum(),"2017")
 
     if(year=='2016'):
-	tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=True)
+	tdr.cmsPrel(36300., 13.,simOnly=False,thisIsPrelim=True)
     elif(year=='2017'):
        tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
     elif (year=='Comb'):
-       tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=True)
+       tdr.cmsPrel(77800., 13.,simOnly=False,thisIsPrelim=True)
 
 
     pad2 = TPad("pad2_int", "pad2_int", 0, 0, 1, r*(1-epsilon_int))
@@ -968,16 +969,16 @@ def displayPrePostFitPlot(fitkind):
             sfitkind_corrected = "Postfit"
         else:
             sfitkind_corrected = sfitkind
-	legend_args = (0.005, 0.60, 0.1, 0.90, sfitkind_corrected, 'NDC')
+	legend_args = (0.005, 0.55, 0.1, 0.90, sfitkind_corrected, 'NDC')
 	legend = TLegend(*legend_args)
 	legend.SetBorderSize(0)
 	legend.SetTextSize(0.05)
 	legend.AddEntry(hist_signal_allbins, "t#bar{t} SM", "f")
 	#legend.AddEntry(hist_background_allbins, "non-t#bar{t}", "f")
-	legend.AddEntry(hist_singletop_allbins, "Single top", "f")
-	legend.AddEntry(hist_vjets_allbins, "W/Z+jets", "f")
+	legend.AddEntry(hist_singletop_allbins, "Single top quark", "f")
+	legend.AddEntry(hist_vjets_allbins, "V+jets", "f")
 	legend.AddEntry(hist_dibosons_allbins, "Diboson", "f")
-	legend.AddEntry(hist_ttx_allbins, "t#bar{t}+X", "f")
+	legend.AddEntry(hist_ttx_allbins, "t#bar{t}V", "f")
 	if (fitkind_!='prefit_asimov'):
 	    legend.AddEntry(hist_data_allbins, "Data", "ep")
 	else:
@@ -1017,7 +1018,9 @@ def displayPrePostFitPlot(fitkind):
 	#style_histo(hist_background_allbins, 4, 1, 4, 3005, 0)
 	style_histo(hist_data_allbins, 1, 1, 0, 3001, 1, 20)
 
-	style_histo(UncertaintyBand, 1, 1, 1, 3002, 0)
+	UncertaintyBand.SetFillColor(16)
+	#style_histo(UncertaintyBand, 16, 1, 16, 1001, 0)
+	#style_histo(UncertaintyBand, 1, 1, 1, 3002, 0)
 	style_labels_counting(UncertaintyBand, 'Events', title)
 	UncertaintyBand.GetXaxis().SetLabelSize(0)
 	UncertaintyBand.GetXaxis().SetTitleSize(0)
@@ -1030,18 +1033,18 @@ def displayPrePostFitPlot(fitkind):
             line_year.SetLineColor(15)
             line_year.Draw("SAME")
 	    text_2016 = TLatex()
-	    text_2016.SetTextSize(0.04)
+	    text_2016.SetTextSize(0.05)
 	    text_2016.DrawLatex(12*nbin,stack.GetMaximum(),"2016")
             text_2017 = TLatex()
-	    text_2017.SetTextSize(0.04)
+	    text_2017.SetTextSize(0.05)
             text_2017.DrawLatex(36*nbin,stack.GetMaximum(),"2017")
 
 	if(year=='2016'):
-	    tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=True)
+	    tdr.cmsPrel(36300., 13.,simOnly=False,thisIsPrelim=True)
 	elif(year=='2017'):
 	   tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=True)
 	elif (year=='Comb'):
-           tdr.cmsPrel(77400., 13.,simOnly=False,thisIsPrelim=False)
+           tdr.cmsPrel(77800., 13.,simOnly=False,thisIsPrelim=False)
 
 
 	pad2 = TPad("pad2", "pad2", 0, 0, 1, r*(1-epsilon))
@@ -1085,7 +1088,8 @@ def displayPrePostFitPlot(fitkind):
 	h_num.Draw("E SAME")
 	#h_one.Draw("SAME")
 
-	style_histo(UncertaintyBandRatio, 1, 1, 1, 3002, 0)
+	UncertaintyBandRatio.SetFillColor(16)
+	#style_histo(UncertaintyBandRatio, 1, 1, 1, 3002, 0)
 	UncertaintyBandRatio.GetXaxis().SetRangeUser(min_bin,max_bin*nObsBins)
 	#UncertaintyBandRatio.GetXaxis().SetRangeUser(0,nObsBins)
 	#if sfitkind!="Pre-fit":
@@ -1216,6 +1220,6 @@ if asimov=="asimov":
 if asimov=="data":
     displayPrePostFitPlot("fit_s")
 
-raw_input('exit')
+#raw_input('exit')
     
     

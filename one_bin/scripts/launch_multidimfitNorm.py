@@ -10,7 +10,7 @@ from tools.style_manager import *
 from ROOT import TFile, TH1, TCanvas, TH1F, TH2F, THStack, TString, TLatex
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
 from ROOT import TLine, TGraphErrors, TGraphAsymmErrors, TVirtualFitter
-from ROOT import gStyle
+from ROOT import gStyle, TColor, gROOT
 
 import tools.tdrstyle as tdr
 tdr.setTDRStyle()
@@ -287,14 +287,18 @@ for i in range(24):
         mu_norm_up.append(math.sqrt(matrix_CovNormUp[0][0]))
         mu_norm_down.append(math.sqrt(matrix_CovNormDown[0][0]))
 
-    print('Normalized differential cross section, bin '+str(i)+' mu_norm='+str(mu_norm[i])+' +'+str(mu_norm_up[i])+' -'+str(mu_norm_down[i]))
+    #print('Normalized differential cross section, bin '+str(i)+' mu_norm='+str(mu_norm[i])+' +'+str(mu_norm_up[i])+' -'+str(mu_norm_down[i]))
+    #print('  - value: '+str(mu_norm[i]))
+    #print('    errors:')
+    #print('    - {asymerror: {minus: '+str(-mu_norm_down[i])+', plus: '+str(mu_norm_up[i])+'}, label: \'total\'}') 
+
 
 ###############################
 ## Plotting covariance matrices
 ###############################
 
 
-doPlotCovariance=True
+doPlotCovariance=False
 
 if doPlotCovariance:
     hCovFractions_Up = TH2F("hCovFractions_Up","hCovFractions_Up", 24,0,24,24,0,24)
@@ -345,11 +349,62 @@ def plotCovarianceMatrix(hCovPOI, UpDown):
 #plotCovarianceMatrix(hCovFractions_Up, "Up")
 #plotCovarianceMatrix(hCovFractions_Down, "Down")
 
-
-
 ###################
 ## Plotting
 ###################
+
+cmunu = 0.01
+
+def textWilson(wilson_):
+    if (wilson_=="cLXX"): modwilson = "c_{L,XX}=#minusc_{L,YY}=" + str(cmunu)
+    if (wilson_=="cLXY"): modwilson = "c_{L,XY}=c_{L,YX}=" + str(cmunu)
+    if (wilson_=="cLXZ"): modwilson = "c_{L,XZ}=c_{L,ZX}=" + str(cmunu)
+    if (wilson_=="cLYZ"): modwilson = "c_{L,YZ}=c_{L,ZY}=" + str(cmunu)
+
+    if (wilson_=="cRXX"): modwilson = "c_{R,XX}=#minusc_{R,YY}=" + str(cmunu)
+    if (wilson_=="cRXY"): modwilson = "c_{R,XY}=c_{R,YX}=" + str(cmunu)
+    if (wilson_=="cRXZ"): modwilson = "c_{R,XZ}=c_{R,ZX}=" + str(cmunu)
+    if (wilson_=="cRYZ"): modwilson = "c_{R,YZ}=c_{R,ZY}=" + str(cmunu)
+
+    if (wilson_=="cXX"): modwilson = "c_{XX}=#minusc_{YY}=" + str(cmunu)
+    if (wilson_=="cXY"): modwilson = "c_{XY}=c_{YX}=" + str(cmunu)
+    if (wilson_=="cXZ"): modwilson = "c_{XZ}=c_{ZX}=" + str(cmunu)
+    if (wilson_=="cYZ"): modwilson = "c_{YZ}=c_{ZY}=" + str(cmunu)
+
+    if (wilson_=="dXX"): modwilson = "d_{XX}=#minusd_{YY}=" + str(cmunu)
+    if (wilson_=="dXY"): modwilson = "d_{XY}=d_{YX}=" + str(cmunu)
+    if (wilson_=="dXZ"): modwilson = "d_{XZ}=d_{ZX}=" + str(cmunu)
+    if (wilson_=="dYZ"): modwilson = "d_{YZ}=d_{ZY}=" + str(cmunu)
+
+    return modwilson
+
+doPlotSME = False
+doStatOnly = True
+
+wilson = "cLXX"
+
+if doPlotSME:
+    print textWilson(wilson)
+    fSME = TFile("/gridgroup/cms/nchanon/PPFv2/results/2016/flattree/sme_matrices_alt_puinc.root")
+    hSME = fSME.Get("reco_2016_central_"+wilson+'_0').Clone()
+    hSME_new = TH1F(hSME.GetName()+"_new",hSME.GetName()+"_new",24,0,24)
+    for it in range(24):
+	hSME_new.SetBinContent(1+it, 1+cmunu*hSME.GetBinContent(1+it))
+    #hSME_new = fSME.Get("reco_2016_central"+wilson).Clone()
+    #hSME_new.SetName(hSME.GetName()+"_new")
+
+mu_stat_up = []
+mu_stat_down = []
+
+if doStatOnly:
+    print 'include stat-only result in the plot'
+    fUnc = TFile("impacts/Comb/n_bjets_differential_timeNew_breakdown_Comb_algosingles_normfit_data.root")
+    hStatUp = fUnc.Get("statUp")
+    hStatDown = fUnc.Get("statDown")
+    for iv in range(24):
+        mu_stat_up.append(hStatUp.GetBinContent(1+iv)/100)
+	mu_stat_down.append(-hStatDown.GetBinContent(1+iv)/100)
+
 
 min_bin = 0
 max_bin = 0
@@ -387,12 +442,32 @@ error_right = np.array([0.01 for i in range(24)], dtype='double')
 error_up = np.array(mu_norm_up, dtype='double')
 error_down = np.array(mu_norm_down, dtype='double')
 
+if doStatOnly:
+    error_stat_up = np.array(mu_stat_up, dtype='double')
+    error_stat_down = np.array(mu_stat_down, dtype='double')
+
 for i in range(24):
-   print('i='+str(i)+' x='+str(x[i])+' y='+str(y[i])+' error_up='+str(error_up[i])+' error_down='+str(error_down[i]))
+    print('  - value: '+str(mu_norm[i]))
+    print('    errors:')
+    print('    - {asymerror: {minus: '+str(-mu_norm_down[i])+', plus: '+str(mu_norm_up[i])+'}, label: \'Stat.+syst.\'}')
+    print('    - {asymerror: {minus: '+str(-error_stat_down[i])+', plus: '+str(error_stat_up[i])+'}, label: \'Stat.\'}')
+   #print('i='+str(i)+' x='+str(x[i])+' y='+str(y[i])+' error_up='+str(error_up[i])+' error_down='+str(error_down[i]))
+   #print('i='+str(i)+' x='+str(x[i])+' y='+str(y[i])+' error_stat_up='+str(error_stat_up[i])+' error_stat_down='+str(error_stat_down[i]))
+
 
 hist  = TGraphAsymmErrors(24, x, y ,
                           error_left, error_right,
                           error_down, error_up)
+
+if doStatOnly:
+	histStat = TGraphAsymmErrors(24, x, y ,
+                          error_left, error_right,
+                          error_stat_down, error_stat_up)
+	color = gROOT.GetColor(3)
+	color.SetRGB(253/255.,174/255.,97/255.)
+	histStat.SetLineColor(3)
+	histStat.SetMarkerColor(3)
+	histStat.SetLineWidth(2)
 
 #histSM = TH1F('histSM','histSM',24,0,24)
 #for i in range(24):
@@ -408,21 +483,36 @@ lineSM.SetLineColor(2)
 titleYaxis = '1/(#sigma_{t#bar{t}}/24) d#sigma_{t#bar{t}}/dt (h^{-1})'
 hist.GetYaxis().SetTitle(titleYaxis)
 legend = TLegend(0.5,0.9,0.9,0.8)
+if doStatOnly:
+    legend = TLegend(0.55,0.9,0.9,0.77)
+
 legend.SetBorderSize(0)
 legend.SetTextSize(0.05)
 if (asimov=='asimov'):
     slegendFit = 'Asimov fit '+year
 else:
-    slegendFit = 'Data'
+    slegendFit = 'Stat.+syst.'
 #legend.SetHeader(slegend, 'C')
-legend.AddEntry(lineSM, 'SM predictions', 'l')
-legend.AddEntry(hist, slegendFit, 'ep')
+legend.AddEntry(hist, slegendFit, 'e')
+if doStatOnly:
+    legend.AddEntry(histStat, 'Stat.', 'ep')
+legend.AddEntry(lineSM, 'SM expectation', 'l')
+if doPlotSME:
+    hSME_new.SetLineWidth(2)
+    hSME_new.SetLineColor(8)
+    #legend.AddEntry(hSME_new, "cLXX=0.02", 'l')
+    legend.AddEntry(hSME_new, textWilson(wilson), 'l')
+#legend.AddEntry(hist, slegendFit, 'ep')
 #legend.AddEntry(hist, 'Averaged t#bar{t} differential cross section', 'lep')
 
 #lineSM.Draw()
 hist.Draw("ap")
+if doStatOnly:
+    histStat.Draw("psame")
 #histSM.Draw("HISTsame")
 lineSM.Draw("SAME")
+if doPlotSME:
+    hSME_new.Draw("same")
 legend.Draw("SAME")
 
 
@@ -439,7 +529,7 @@ hist.GetYaxis().SetLabelSize(0.05)
 hist.GetYaxis().SetTitleOffset(1.5)
 
 hist.GetXaxis().SetRangeUser(0,24)
-hist.GetXaxis().SetTitle('Sidereal time (h)')
+hist.GetXaxis().SetTitle('Sidereal hour (h)')
 hist.GetXaxis().SetRangeUser(0,24)
 hist.GetXaxis().SetTitleSize(0.05)
 hist.GetXaxis().SetLabelSize(0.05)
@@ -459,11 +549,11 @@ else:
     sim=False
 
 if(year=='2016'):
-    tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
+    tdr.cmsPrel(36300., 13, simOnly=sim, thisIsPrelim=True)
 elif(year=='2017'):
     tdr.cmsPrel(41500., 13., simOnly=sim, thisIsPrelim=True)
 elif(year=='Comb'):
-    tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=False)
+    tdr.cmsPrel(77800,13., simOnly=sim, thisIsPrelim=False)
 
 if asimov=='asimov':
     sasimov='asimov'
@@ -473,7 +563,7 @@ else:
 resultname = './impacts/'+year+'/'+observable+'_normalized_differential_normfit_'+year+'_'+sasimov
 canvas.SaveAs(resultname+'.pdf')
 
-exit()
+#exit()
 
 ####################################
 ## Plotting norm diff XS vs PU, Lumi
@@ -642,7 +732,7 @@ def plotNormDiffXSvsVar(x_tmp, y_tmp, x_errleft_tmp, x_errright_tmp, y_errdown_t
     histPU.SetMarkerColor(1)
 
     if(year=='2016'):
-	tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
+	tdr.cmsPrel(36300., 13, simOnly=sim, thisIsPrelim=True)
     elif(year=='2017'):
 	tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
 
@@ -652,13 +742,13 @@ def plotNormDiffXSvsVar(x_tmp, y_tmp, x_errleft_tmp, x_errright_tmp, y_errdown_t
 if year=="2016" or year=="2017":
     titleYaxis = '1/(#sigma_{t#bar{t}}/24) d#sigma_{t#bar{t}}/dt (h^{-1})'
     plotNormDiffXSvsVar(pu, y, pu_errleft, pu_errright, error_down, error_up, "PU", "number of PU interactions", titleYaxis)
-    plotNormDiffXSvsVar(lumi_time, y, lumi_err_time, lumi_err_time, error_down, error_up, "Lumi", "Integrated Lumi (pb^{-1})", titleYaxis)
-    plotNormDiffXSvsVar(trigSF_time, y, trigSF_err_time, trigSF_err_time, error_down, error_up, "TriggerSF", "Trigger SF", titleYaxis)
+    #plotNormDiffXSvsVar(lumi_time, y, lumi_err_time, lumi_err_time, error_down, error_up, "Lumi", "Integrated Lumi (pb^{-1})", titleYaxis)
+    #plotNormDiffXSvsVar(trigSF_time, y, trigSF_err_time, trigSF_err_time, error_down, error_up, "TriggerSF", "Trigger SF", titleYaxis)
     #plotNormDiffXSvsVar(nuis_syst_b_correlated, y, nuis_syst_b_correlated_err, nuis_syst_b_correlated_err, error_down, error_up, "syst_b_correlated", "syst_b_correlated", titleYaxis)
     #plotNormDiffXSvsVar(nuis_syst_elec_id, y, nuis_syst_elec_id_err, nuis_syst_elec_id_err, error_down, error_up, "syst_elec_id", "syst_elec_id", titleYaxis)
 
-    plotNormDiffXSvsVar(pu, lumi_time, pu_errleft, pu_errright, lumi_err_time, lumi_err_time, "PU-Lumi", "number of PU interactions", "Integrated Lumi (pb^{-1})")
-    plotNormDiffXSvsVar(pu, trigSF_time, pu_errleft, pu_errright, trigSF_err_time, trigSF_err_time, "PU-TriggerSF", "number of PU interactions", "Trigger SF")
+    #plotNormDiffXSvsVar(pu, lumi_time, pu_errleft, pu_errright, lumi_err_time, lumi_err_time, "PU-Lumi", "number of PU interactions", "Integrated Lumi (pb^{-1})")
+    #plotNormDiffXSvsVar(pu, trigSF_time, pu_errleft, pu_errright, trigSF_err_time, trigSF_err_time, "PU-TriggerSF", "number of PU interactions", "Trigger SF")
 
 
 

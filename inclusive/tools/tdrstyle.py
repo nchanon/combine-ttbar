@@ -58,9 +58,9 @@ def cmsPrel(lumi,  energy=None,  simOnly=True,  onLeft=True,  sp=0, textScale=1.
   cmsxloc = 0.9
   if onLeft:
     cmsalign = 11
-    cmsxloc = 0.254
+    cmsxloc = 0.16
     #simxloc = 0.334 #Changed for paper v4
-    simxloc = 0.36
+    simxloc = 0.1
   xlumi = 1-rt.gStyle.GetPadRightMargin() - xoffset
   if (lumi > 0.):
     latex.SetTextAlign(31) # align left, right=31

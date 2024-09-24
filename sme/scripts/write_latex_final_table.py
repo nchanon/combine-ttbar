@@ -35,6 +35,8 @@ year = args.year
 #results_multiple_data = open('impacts/'+year+'/data/fit_multiple_'+observable+'_'+year+'_data.txt')
 
 
+do2sigma = True
+
 #cmunu = 0.001
 cmunu = 1e-3
 
@@ -56,7 +58,10 @@ def read_results(asi, fitkind):
 	filename += 'multiple_'
     elif fitkind=="othersfloating":
 	filename += 'othersfloating_'
-    filename += observable+'_'+year+'_'+asi+'.txt'
+    filename += observable+'_'+year+'_'+asi
+    if do2sigma and fitkind=="othersfloating":
+        filename += '_2sigma'
+    filename += '.txt'
     results = open(filename)
     wilson = []
     bestfit = []
@@ -166,8 +171,8 @@ results.append(read_results("data", "othersfloating"))
 wilson = results[0][0]
 print wilson
 
-#doForPaper=True
-doForPaper=False
+doForPaper=True
+#doForPaper=False
 
 if doForPaper==False:
     text = ''
@@ -176,7 +181,7 @@ if doForPaper==False:
     text += '\n' +'\\begin{tabular}{|c|c|c|c|c|}'
     text += '\n' +'\\hline '
     text += '\n' +' & SM expected & Data & SM expected & Data\\\\'
-    text += '\n' +'Wilson coefficient & Single coeff. fit  & Single coeff. fit &  4 coeff. fit & 4 coeff. fit\\\\'
+    text += '\n' +'Wilson coefficient & Others fixed to SM & Others fixed to SM & Others floating & Others floating\\\\'
     text += '\n' +' & ($10^{-3}$ unit) & ($10^{-3}$ unit) & ($10^{-3}$ unit) & ($10^{-3}$ unit)\\\\'
     text += '\n' +'\\hline '
 
@@ -190,9 +195,9 @@ if doForPaper==False:
 	    text += '\n \\hline' 
 
     text += '\n' +'\\end{tabular}'
-    text += '\n' +'\\caption{\\label{SMEresultsAsimDataSingleMultiple}Expected and observed 1$\sigma$ interval measured for the SME fits of single coefficients separately'
+    text += '\n' +'\\caption{\\label{SMEresultsAsimDataSingleMultiple}Expected and observed 1$\sigma$ interval measured for the SME fits of single coefficients while the others are fixed to their SM value,'
     if doOthersFloating:
-	text += ' and while coefficients for the three other directions are floating,' 
+	text += ' and while coefficients for the three other directions are floating.' 
     if doMultiple:
         text += ' and four coefficients simultaneously.' # All values are to be multiplied by $ 10^{-3}$.}'
     text += '\n' +'\\end{center}'
@@ -228,6 +233,8 @@ print text
 outname = './impacts/Comb/Table_Results_Final'
 if doForPaper:
     outname += '_ForPaper'
+if do2sigma:
+    outname += '_2sigma'
 print 'Wrote '+outname+'.txt'
 fileout = open(outname+'.txt','w')
 fileout.write(text)

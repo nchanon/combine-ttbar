@@ -563,11 +563,11 @@ if asimov=='asimov':
 else:
     sim=False
 if(year=='2016'):
-    tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
+    tdr.cmsPrel(36300., 13, simOnly=sim, thisIsPrelim=True)
 elif(year=='2017'):
     tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
 elif(year=='Comb'):
-    tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=True)
+    tdr.cmsPrel(77800,13., simOnly=sim, thisIsPrelim=True)
 
 resultname = './impacts/'+year+'/'+asimov+'/'+observable+'_smefit_'+nuisancegroup+'_'+year
 #if (asimov=='injectiontest'):

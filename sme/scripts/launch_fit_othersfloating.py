@@ -16,9 +16,10 @@ observable = args.observable
 year = args.year
 asimov = args.asimov
 
-doFit=True
-#doFit=False
+#doFit=True
+doFit=False
 
+do2sigma=True
 
 def asimov_param(wlist):
     asi = ' --setParameters '
@@ -102,20 +103,32 @@ for wlist in wilson_list:
 
 #for i in range(1):
 for i in range(len(wilson_list)):
-    cmd = 'combine -M MultiDimFit --algo=singles --cminDefaultMinimizerStrategy 0 '
+    cmd = 'combine -M MultiDimFit --algo=singles '
+    if do2sigma==False:
+	cmd += ' --cminDefaultMinimizerStrategy 0 '
+    else:
+	cmd += ' --robustFit 1 '
     #cmd = 'combine -M MultiDimFit --algo=cross --cl=0.68 --cminDefaultMinimizerStrategy 0 '
+    if do2sigma:
+        cmd += ' --do95 1 '
     cmd += workspace_input[i]
     cmd += asimov_param(wilson_list[i].split("_"))
     cmd += ' --saveFitResult '
     cmd += ' -n .othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov
+    if do2sigma:
+	cmd += '_2sigma'
     print cmd
     if doFit==True:
         os.system(cmd)
 
+#exit()
 
 coeff_serie_central = []
 coeff_serie_up = []
 coeff_serie_down = []
+coeff_serie_2sigma_up = []
+coeff_serie_2sigma_down = []
+
 
 hCorrPOI = [] #= TH2F("hCorrPOI","hCorrPOI",16,0,16,16,0,16)
 
@@ -125,9 +138,17 @@ for i in range(len(wilson_list)):
     coeff_central = []
     coeff_up = []
     coeff_down = []
+    coeff_2sigma_up = []
+    coeff_2sigma_down = []
+    nUncertainties = 2
 
     wlist = wilson_list[i].split("_")
-    fResult = TFile('higgsCombine.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.MultiDimFit.mH120.root')
+    nameResult = 'higgsCombine.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov
+    if do2sigma:
+	nameResult += '_2sigma'
+	nUncertainties = 4
+    fResult = TFile(nameResult+'.MultiDimFit.mH120.root')
+    #fResult = TFile('higgsCombine.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.MultiDimFit.mH120.root')
     tResult = fResult.Get('limit')
 
     #tResult.GetEvent(0)
@@ -138,49 +159,71 @@ for i in range(len(wilson_list)):
     for iw in range(len(wlist)):
         tResult.GetEvent(0)
 	coeff_central.append(tResult.GetLeaf(wlist[iw]).GetValue())
-	tResult.GetEvent(1+iw*2)
+	tResult.GetEvent(1+iw*nUncertainties)
 	#print wlist[iw]+' down='+str(tResult.GetLeaf(wlist[iw]).GetValue())
 	coeff_down.append(tResult.GetLeaf(wlist[iw]).GetValue()-coeff_central[-1]) 
 	#for j in range(len(wlist)):
 	#    print str(tResult.GetLeaf(wlist[j]).GetValue()) 
-        tResult.GetEvent(1+iw*2+1)
+        tResult.GetEvent(1+iw*nUncertainties+1)
         #for j in range(len(wlist)):
         #    print str(tResult.GetLeaf(wlist[j]).GetValue())
         #print wlist[iw]+' up='+str(tResult.GetLeaf(wlist[iw]).GetValue())
 	coeff_up.append(tResult.GetLeaf(wlist[iw]).GetValue()-coeff_central[-1])
-   
-    fFit = TFile('multidimfit.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.root')
-    fitResult = fFit.Get("fit_mdf")
-    hCorrPOI.append(TH2F("hCorrPOI"+wilson_list[i],"hCorrPOI"+wilson_list[i],4,0,4,4,0,4))
-    for j in range(len(wlist)):
-	for k in range(len(wlist)):
-	    corrval = fitResult.correlation(wlist[j], wlist[k])
-	    hCorrPOI[i].SetBinContent(1+j, 1+k, corrval)
-    	    hCorrPOI[i].GetXaxis().SetBinLabel(1+j, wlist[j])
-            hCorrPOI[i].GetYaxis().SetBinLabel(1+k, wlist[k])
-    plot2Dmatrix(hCorrPOI[i], "CorrelationMatrixOthersfloating_"+wilson_list[i])
+	if do2sigma:
+	    tResult.GetEvent(1+iw*nUncertainties+2)
+	    coeff_2sigma_down.append(tResult.GetLeaf(wlist[iw]).GetValue()-coeff_central[-1])
+	    tResult.GetEvent(1+iw*nUncertainties+3)
+	    coeff_2sigma_up.append(tResult.GetLeaf(wlist[iw]).GetValue()-coeff_central[-1])
+
+    if do2sigma==False:
+        fFit = TFile('multidimfit.othersfloating_'+observable+'_'+year+'_'+wilson_list[i]+'_'+asimov+'.root')
+        fitResult = fFit.Get("fit_mdf")
+        hCorrPOI.append(TH2F("hCorrPOI"+wilson_list[i],"hCorrPOI"+wilson_list[i],4,0,4,4,0,4))
+        for j in range(len(wlist)):
+	    for k in range(len(wlist)):
+	        corrval = fitResult.correlation(wlist[j], wlist[k])
+	        hCorrPOI[i].SetBinContent(1+j, 1+k, corrval)
+    	        hCorrPOI[i].GetXaxis().SetBinLabel(1+j, wlist[j])
+                hCorrPOI[i].GetYaxis().SetBinLabel(1+k, wlist[k])
+        plot2Dmatrix(hCorrPOI[i], "CorrelationMatrixOthersfloating_"+wilson_list[i])
 	    
  
     coeff_serie_central.append(coeff_central)
     coeff_serie_up.append(coeff_up)
     coeff_serie_down.append(coeff_down)
+    if do2sigma:
+        coeff_serie_2sigma_up.append(coeff_2sigma_up)
+        coeff_serie_2sigma_down.append(coeff_2sigma_down)
+
 
 #for i in range(len(wilson_list)):
 #    plot2Dmatrix(hCorrPOI[i], "CorrelationMatrixOthersfloating_"+wilson_list[i])
 
+#exit()
 
 text = ''
 for i in range(len(wilson_list)):
     wlist = wilson_list[i].split("_")
     for iw in range(len(wlist)):
-	print wlist[iw]+'='+str(coeff_serie_central[i][iw])+' +'+str(coeff_serie_up[i][iw])+' '+str(coeff_serie_down[i][iw])
-	text += wlist[iw]+' '+str(round(coeff_serie_central[i][iw],3))+' '+str(round(coeff_serie_down[i][iw],3))+' '+str(round(coeff_serie_up[i][iw],3))+'\n'
+	if do2sigma==False:
+	    print wlist[iw]+'='+str(coeff_serie_central[i][iw])+' +'+str(coeff_serie_up[i][iw])+' '+str(coeff_serie_down[i][iw])
+	    text += wlist[iw]+' '+str(round(coeff_serie_central[i][iw],3))+' '+str(round(coeff_serie_down[i][iw],3))+' '+str(round(coeff_serie_up[i][iw],3))+'\n'
+        if do2sigma:
+            #print '95% CL: +'+str(coeff_serie_2sigma_up[i][iw])+' '+str(coeff_serie_2sigma_down[i][iw])
+	    text += wlist[iw]+' '+str(round(coeff_serie_central[i][iw],3))+' '+str(round(coeff_serie_down[i][iw],3))+' '+str(round(coeff_serie_up[i][iw],3))+' '+str(round(coeff_serie_2sigma_down[i][iw],3))+' '+str(round(coeff_serie_2sigma_up[i][iw],3))+'\n'
+	    print '  - value: ' + str(coeff_serie_central[i][iw])
+	    print '    errors:'
+	    print '    - {asymerror: {minus: ' + str(coeff_serie_down[i][iw]) +', plus: ' +str(coeff_serie_up[i][iw])+'}, label: \'1$\sigma$.\'}'
+	    print '    - {asymerror: {minus: ' + str(coeff_serie_2sigma_down[i][iw]) +', plus: ' +str(coeff_serie_2sigma_up[i][iw])+'}, label: \'2$\sigma$.\'}'
+
 
 outname = './impacts/'+year+'/'+asimov+'/fit_othersfloating_'+observable+'_'+year
 if asimov == 'asimov':
     outname += '_'+asimov
 else:
     outname += '_data'
+if do2sigma:
+    outname += '_2sigma'
 
 print 'Write results in '+outname+'.txt'
 fileout = open(outname+'.txt','w')

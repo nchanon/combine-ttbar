@@ -12,6 +12,8 @@ observable = args.observable
 year = args.year
 asimov = args.asimov
 
+doRobustFit = True
+
 def asimov_param(w):
     if asimov == 'asimov':
         return ['--setParameters',w+'=0','-t','-1']
@@ -68,16 +70,14 @@ for i in range(len(cmd_input)):
     print '-------------------'
     print ' >>> Fit '+wilson_list[i]
     print '-------------------'
-
-    cmd = ['combine', 
-           '-M', 
-           'MultiDimFit',
-           '--algo=singles',
-	   '--cminDefaultMinimizerStrategy',
-	   '0', 
+    
+    if doRobustFit==False:
+        cmd = ['combine', '-M', 'MultiDimFit', '--algo=singles', '--cminDefaultMinimizerStrategy', '0', cmd_input[i]]
+    else:
+	cmd = ['combine', '-M', 'MultiDimFit', '--algo=singles', '--robustFit', '1', cmd_input[i]]
            #'--robustFit',
            #'1',
-           cmd_input[i]]
+           #cmd_input[i]]
     for a in asimov_param(wilson_list[i]):
         cmd.append(a)
     #if (asimov=="" and (wilson_list[i].find("XZ")!=-1 or wilson_list[i].find("YZ")!=-1)):

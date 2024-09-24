@@ -970,6 +970,18 @@ def plotUncerainties(doNormBreakDown):
 	h_uncertUp.append(hUp)
 	h_uncertDown.append(hDown)
 
+    for k in range(len(list_nuisnames)):
+	print('- header: {name: \''+list_legendnames[k]+'\'}')
+        print('  qualifiers:')
+        print('  - {name: \'Uncertainty on $1/(\sigma/24)d\sigma_{t\bar{t}}/dt$\', value: \'%\'}')
+        print('  values:')
+	for it in range(ntimebin):
+            print('  - value: 0')
+	    if h_uncertDown[k].GetBinContent(it+1)!=0 and h_uncertUp[k].GetBinContent(it+1)!=0:
+	        print('    errors:')
+    	        print('    - {asymerror: {minus: '+str(h_uncertDown[k].GetBinContent(it+1))+', plus: '+str(h_uncertUp[k].GetBinContent(it+1))+'}, label: \''+str(list_legendnames[k])+'\'}')
+
+
 
     def getcolor(c):
        d = c
@@ -1048,7 +1060,7 @@ def plotUncerainties(doNormBreakDown):
 		h_uncertUp[k].SetMaximum(plotYmax)
 		h_uncertUp[k].SetYTitle("Uncertainty on 1/(#sigma_{t#bar{t}}/24) d#sigma_{t#bar{t}}/dt (%)")
 		#h_uncertUp[k].SetYTitle("Uncertainty (%)")
-		h_uncertUp[k].SetXTitle("Sidereal time (h)");
+		h_uncertUp[k].SetXTitle("Sidereal hour (h)");
 		h_uncertUp[k].GetYaxis().SetTitleOffset(1.0)
 	 	h_uncertUp[k].GetYaxis().SetTitleSize(0.05)
                 h_uncertUp[k].GetYaxis().SetLabelSize(0.05)
@@ -1085,17 +1097,23 @@ def plotUncerainties(doNormBreakDown):
 
 
     if(year=='2016'):
-        tdr.cmsPrel(35900., 13, simOnly=sim, thisIsPrelim=True)
+        tdr.cmsPrel(36300., 13, simOnly=sim, thisIsPrelim=True)
     elif(year=='2017'):
         tdr.cmsPrel(41530., 13., simOnly=sim, thisIsPrelim=True)
     elif(year=='Comb'):
-        tdr.cmsPrel(77400,13., simOnly=sim, thisIsPrelim=False)
+        tdr.cmsPrel(77800,13., simOnly=sim, thisIsPrelim=False)
 
     resultname = './impacts/'+year+'/'+observable+'_differential_'+nuisancegroup+'_'+year+'_algosingles'
     if doNormBreakDown==True:
 	resultname += '_normfit'
     resultname += '_' + asimov
     canvas.SaveAs(resultname+'.pdf')
+
+    fOutput = TFile(resultname+'.root','RECREATE')
+    for ih in range(len(list_nuisnames)):
+        h_uncertUp[ih]. Write()
+        h_uncertDown[ih].Write()
+    fOutput.Close()
  
     #raw_input()
 

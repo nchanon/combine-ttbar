@@ -29,15 +29,19 @@ if asimov=='asimov':
 else:
     sasimov='_data'
 
+#doSingle = True
 doSingle = False
 doOthersFloating = True
 doMultiple = False
 #doMultiple = True
+do2sigma = True
 
 results_single = open('impacts/'+year+'/'+asimov+'/fit_'+observable+'_'+year+sasimov+'.txt')
 results_multiple = open('impacts/'+year+'/'+asimov+'/fit_multiple_'+observable+'_'+year+sasimov+'.txt')
-results_othersfloating = open('impacts/'+year+'/'+asimov+'/fit_othersfloating_'+observable+'_'+year+sasimov+'.txt')
-
+if do2sigma==False:
+    results_othersfloating = open('impacts/'+year+'/'+asimov+'/fit_othersfloating_'+observable+'_'+year+sasimov+'.txt')
+else:
+    results_othersfloating = open('impacts/'+year+'/'+asimov+'/fit_othersfloating_'+observable+'_'+year+sasimov+'_2sigma.txt')
 
 #cmunu = 0.001
 cmunu = 1e-3
@@ -56,6 +60,8 @@ uncert_othersfloating_up = []
 uncert_single_down = []
 uncert_multiple_down = []
 uncert_othersfloating_down = []
+uncert_othersfloating_2sigma_up = []
+uncert_othersfloating_2sigma_down = []
 
 
 for line in results_single:
@@ -102,6 +108,10 @@ for line in results_othersfloating:
             uncert_othersfloating_up.append(float(word))
             uncert = uncert + float(word)
             uncert_othersfloating.append(uncert/2.)
+	if (i==4):
+            uncert_othersfloating_2sigma_down.append(float(word))
+	if (i==5):
+	    uncert_othersfloating_2sigma_up.append(float(word))
         i = i+1
 
 
@@ -146,6 +156,9 @@ if doMultiple:
 elif doSingle==False and doOthersFloating==True and doMultiple==False:
     xmin = -0.02
     xmax = 0.02
+    if do2sigma:
+        xmin = -0.025
+	xmax = 0.025
 else:
     xmin = -0.035
     xmax = 0.02
@@ -166,11 +179,12 @@ grid = TH2F('grid','grid',300,xmin,xmax,16,0,16)
 for i in range(16):
    grid.GetYaxis().SetBinLabel(16-i,getwilsontext(wilson[i]))
 grid.GetYaxis().SetLabelSize(0.06) #0.045
-grid.SetXTitle("Wilson coefficient value")
+grid.SetXTitle("SME coefficient value")
 grid.GetXaxis().SetTitleSize(0.045)#0.04
 grid.GetXaxis().SetLabelSize(0.045)#0.04
 gPad.SetGridx(1)
 
+grid.GetXaxis().SetNdivisions(505)
 grid.Draw()
 
 line_block1 = TLine(xmin,12,xmax,12)
@@ -185,6 +199,7 @@ line_block3.Draw()
 #line_wilson.Draw()
 line_wilson_single = []
 line_wilson_othersfloating = []
+line_wilson_othersfloating_2sigma = []
 line_wilson_multiple = []
 wilson_height_single = []
 wilson_height_othersfloating = []
@@ -201,8 +216,8 @@ if doSingle==False and doOthersFloating==True and doMultiple==False:
 print 'Preparing lines '
 
 for num in range(16):
-    print str(num)
-    if doSingle==True and ((doOthersFloating==False and doMultiple==True) or (doOthersFloating==True and doMultiple==False)):
+    #print str(num)
+    if doSingle==True and ((doOthersFloating==False and doMultiple==True) or (doOthersFloating==True and doMultiple==False) or (doOthersFloating==True and doMultiple==True)):
         wilson_height_single.append(16-num-spacing)
         line_wilson_single.append(TLine(cmunu*(bestfit_single[num]+uncert_single_down[num]),16-num-spacing,cmunu*(bestfit_single[num]+uncert_single_up[num]),16-num-spacing))
         line_wilson_single[-1].SetLineWidth(2)
@@ -226,11 +241,16 @@ for num in range(16):
         line_wilson_othersfloating.append(TLine(cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_down[num]),16-num-2*spacing,cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_up[num]),16-num-2*spacing))
         line_wilson_othersfloating[-1].SetLineWidth(2)
         line_wilson_othersfloating[-1].SetLineColor(8)
-    if doSingle==False and doOthersFloating==True and doMultiple==False:
+    if doSingle==False and doOthersFloating==True and doMultiple==False: #for paper
 	wilson_height_othersfloating.append(16-num-spacing)
         line_wilson_othersfloating.append(TLine(cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_down[num]),16-num-spacing,cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_up[num]),16-num-spacing))
-        line_wilson_othersfloating[-1].SetLineWidth(2)
+	print '[' +str(round(1*(bestfit_othersfloating[num]+uncert_othersfloating_down[num]),2)) + '; '+ str(round(1*(bestfit_othersfloating[num]+uncert_othersfloating_up[num]),2))+']'
+        line_wilson_othersfloating[-1].SetLineWidth(4)
         line_wilson_othersfloating[-1].SetLineColor(1)
+	if do2sigma:
+	    line_wilson_othersfloating_2sigma.append(TLine(cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_2sigma_down[num]),16-num-spacing,cmunu*(bestfit_othersfloating[num]+uncert_othersfloating_2sigma_up[num]),16-num-spacing))
+	    line_wilson_othersfloating_2sigma[-1].SetLineWidth(2)
+	    line_wilson_othersfloating_2sigma[-1].SetLineColor(1)
 
     if doSingle:
         line_wilson_single[-1].Draw()
@@ -239,8 +259,10 @@ for num in range(16):
         line_wilson_multiple[-1].Draw()
 	print 'multiple done'
     if doOthersFloating: 
-        line_wilson_othersfloating[-1].Draw()
-	print 'othersfloating done'
+	if do2sigma:
+	    line_wilson_othersfloating_2sigma[-1].Draw()
+        line_wilson_othersfloating[-1].Draw("same")
+	#print 'othersfloating done'
 
 #   addLineWilsonSingle(i)
  #   addLineWilsonMultiple(i)
@@ -264,6 +286,8 @@ if doMultiple and doOthersFloating:
     marker_size = 0.8
 else:
     marker_size = 1.0
+    if do2sigma:
+	marker_size = 1.2
 
 if doSingle:
     hist_bestfit_single = TGraph(16, x_single, y_single)
@@ -291,6 +315,11 @@ if doOthersFloating:
         hist_bestfit_othersfloating.SetMarkerColor(1)
         hist_bestfit_othersfloating.SetLineColor(1)
     hist_bestfit_othersfloating.SetLineWidth(2)
+    if do2sigma:
+	hist_bestfit_othersfloating.SetLineWidth(4)
+	hist_2sigma_othersfloating = hist_bestfit_othersfloating.Clone()
+	hist_2sigma_othersfloating.SetName('hist_2sigma_othersfloating')
+	hist_2sigma_othersfloating.SetLineWidth(2)
 
 print 'Drawing graphs'
 
@@ -308,27 +337,41 @@ print 'Making legend'
 x_legend = 0.17
 y_legend = 0.73
 
-if doMultiple:
-    legend = TLegend(x_legend,y_legend,x_legend+0.35,y_legend+0.18,'Fit '+asimov+' 68% CL')
+if do2sigma==False:
+    if doMultiple:
+	legend = TLegend(x_legend,y_legend,x_legend+0.35,y_legend+0.18,'Fit '+asimov+' 68% CL')
+    else:
+	legend = TLegend(x_legend,y_legend+0.05,x_legend+0.35,y_legend+0.18,'68% CL')
+    #legend = TLegend(x_legend,y_legend,x_legend+0.35,y_legend+0.18,'Fit '+asimov+' 68% CL')
+    legend.SetBorderSize(0)
+    if doOthersFloating==True and doMultiple==True:
+	legend.SetTextSize(0.027)
+    else:
+	legend.SetTextSize(0.035)
+    if doSingle:
+	legend.AddEntry(hist_bestfit_single, "Single Wilson, others fixed to SM", "lp")
+	#legend.AddEntry(line_wilson_single[0], "Single Wilson, others fixed to SM", "lp")
+    if doOthersFloating==True:
+	legend.AddEntry(hist_bestfit_othersfloating, "Single Wilson, three others floating", "lp")
+	#legend.AddEntry(line_wilson_othersfloating[0], "Single Wilson, others floating", "lp")
+    if doMultiple==True:
+	legend.AddEntry(hist_bestfit_multiple, "4 Wilson simultaneously", "lp")
+	#legend.AddEntry(line_wilson_multiple[0], "4 Wilson simultaneously", "lp")
+    if doOthersFloating==False or doSingle==True or doMultiple==True:
+	legend.Draw()
 else:
-    legend = TLegend(x_legend,y_legend+0.05,x_legend+0.35,y_legend+0.18,'68% CL')
-#legend = TLegend(x_legend,y_legend,x_legend+0.35,y_legend+0.18,'Fit '+asimov+' 68% CL')
-legend.SetBorderSize(0)
-if doOthersFloating==True and doMultiple==True:
-    legend.SetTextSize(0.027)
-else:
-    legend.SetTextSize(0.035)
-if doSingle:
-    legend.AddEntry(hist_bestfit_single, "Single Wilson, others fixed to SM", "lp")
-    #legend.AddEntry(line_wilson_single[0], "Single Wilson, others fixed to SM", "lp")
-if doOthersFloating==True:
-    legend.AddEntry(hist_bestfit_othersfloating, "Single Wilson, three others floating", "lp")
-    #legend.AddEntry(line_wilson_othersfloating[0], "Single Wilson, others floating", "lp")
-if doMultiple==True:
-    legend.AddEntry(hist_bestfit_multiple, "4 Wilson simultaneously", "lp")
-    #legend.AddEntry(line_wilson_multiple[0], "4 Wilson simultaneously", "lp")
-if doOthersFloating==False or doSingle==True or doMultiple==True:
-    legend.Draw()
+    if doOthersFloating==True and doSingle==False and doMultiple==False:
+	
+	x_legend = 0.75
+	y_legend = 0.8
+	legend = TLegend(x_legend,y_legend,x_legend+0.18,y_legend+0.1,'')
+	legend.SetBorderSize(0)
+	legend.SetTextSize(0.035)
+	legend.AddEntry(hist_bestfit_othersfloating, "68% CL", "lp")
+	legend.AddEntry(hist_2sigma_othersfloating, "95% CL", "l")
+	legend.Draw()
+
+
 
 canvas.Update()
 
@@ -339,11 +382,11 @@ if asimov=='asimov':
 else:
     sim=False
 if(year=='2016'):
-    tdr.cmsPrel(35900., 13.,simOnly=sim, thisIsPrelim=True)
+    tdr.cmsPrel(36300., 13.,simOnly=sim, thisIsPrelim=True)
 elif(year=='2017'):
    tdr.cmsPrel(41500., 13.,simOnly=sim, thisIsPrelim=True)
 elif (year=='Comb'):
-   tdr.cmsPrel(77400,13.,simOnly=sim, thisIsPrelim=False)
+   tdr.cmsPrel(77800,13.,simOnly=sim, thisIsPrelim=False)
 
 print 'Saving'
 

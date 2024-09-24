@@ -5,7 +5,7 @@ sys.path.append('./')
 
 from ROOT import TFile, TH1, TH2, TCanvas, TH1F, THStack, TString
 from ROOT import TLegend, TApplication, TRatioPlot, TPad, TFrame
-from ROOT import TGraphAsymmErrors
+from ROOT import TGraphAsymmErrors, TGaxis
 from ROOT import TStyle, gStyle, TColor, TLatex
 
 import math
@@ -301,6 +301,7 @@ def displayPrePostFitPlot(fitkind):
 
 	hist_data = getGraphWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/data"))
 	hist_total = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/total"))
+        hist_total_background = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/total_background"))
 	hist_signal = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/signal"))
 	hist_singletop = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/singletop"))
 	hist_vjets = getHistWithXaxis(fDiagnostics.Get("shapes_"+fitkind+"/"+observable+"/vjets"))
@@ -309,20 +310,37 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand = getUncertaintyBandGraph(hist_total)
 	UncertaintyBandRatio = getUncertaintyBandRatioGraph(hist_total)
 
+	for h in hist_signal, hist_ttx, hist_singletop, hist_dibosons, hist_vjets, hist_total_background, hist_total:
+	    a = 0
+	    b = 0
+	    for ibin in range(h.GetNbinsX()):
+		a += h.GetBinContent(ibin+1)
+		b += h.GetBinError(ibin+1)*h.GetBinError(ibin+1)
+	    b = math.sqrt(b)
+	    print h.GetName()+' : '+str(a)+' +/- '+str(b)	
+
+
 	if sfitkind=="Pre-fit":
-	    sfitkind_corrected = "Prefit"
-	legend_args = (0.645, 0.56, 0.85, 0.9, sfitkind_corrected, 'NDC')
+	    sfitkind_corrected = "" #"Prefit"
+	else:
+	    sfitkind_corrected = "Postfit"
+	legend_args = (0.62, 0.56, 0.82, 0.9, sfitkind_corrected, 'NDC')
 	#legend_args = (0.645, 0.65, 0.85, 0.92, sfitkind_corrected, 'NDC')
 	legend = TLegend(*legend_args)
 	legend.SetTextSize(0.05)
 	legend.SetBorderSize(0)
+        legend.AddEntry(hist_data, "Data","ep")
 	legend.AddEntry(hist_signal, "t#bar{t} SM", "f")
 	#legend.AddEntry(hist_background, "non-t#bar{t}", "f")
-	legend.AddEntry(hist_singletop, "Single top", "f")
-	legend.AddEntry(hist_vjets, "W/Z+jets", "f")
+	legend.AddEntry(hist_singletop, "Single top quark", "f")
+	legend.AddEntry(hist_vjets, "V+jets", "f")
 	legend.AddEntry(hist_dibosons, "Diboson", "f")
-	legend.AddEntry(hist_ttx, "t#bar{t}+X", "f")
-	legend.AddEntry(hist_data, "Data","ep")
+	legend.AddEntry(hist_ttx, "t#bar{t}V", "f")
+	#legend.AddEntry(hist_data, "Data","lep")
+
+        #hist_ttx.GetXaxis().SetNdivisions(4,0,0)
+	#hist_signal.GetXaxis().SetNdivisions(4,0,0)
+	#hist_signal.GetXaxis().SetTickLength(0)
 
 	stack = THStack()
 	stack.Add(hist_ttx)
@@ -337,11 +355,15 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand.SetMinimum(0)
 	if (doLog): UncertaintyBand.SetMinimum(10)
 
+	#stack.GetXaxis().SetTickLength(0)
+	#stack.GetXaxis().SetNdivisions(4,0,0)
 	stack.Draw()
+	#UncertaintyBand.GetXaxis().SetNdivisions(4)
+	UncertaintyBand.GetXaxis().SetTickLength(0)
 	UncertaintyBand.GetYaxis().SetTitleOffset(0.95)
 	UncertaintyBand.Draw("2AP SAME")
 	stack.Draw("HIST SAME")
-	hist_data.Draw("PSAME")
+	hist_data.Draw("EX0PSAME")
 	legend.Draw("SAME")
 
 	# line_color, line_width, fill_color, fill_style, marker_size, marker_style=1
@@ -361,7 +383,7 @@ def displayPrePostFitPlot(fitkind):
 	style_histo(hist_ttx, 8, 1, 8, 3002, 0) #3005
 	style_histo(hist_dibosons, 42, 1, 42, 3002, 0) #3005
 	style_histo(hist_vjets, 619, 1, 619, 3002, 0) #3005
-	style_histo(hist_data, 1, 1, 0, 3001, 1, 20)
+	style_histo(hist_data, 1, 1, 0, 3001, 1.3, 20)
 
 
 	style_histo(UncertaintyBand, 1, 1, 1, 3005, 0)
@@ -370,7 +392,7 @@ def displayPrePostFitPlot(fitkind):
 	UncertaintyBand.GetXaxis().SetTitleSize(0)
 
 	if(year=='2016'):
-	    tdr.cmsPrel(35900., 13.,simOnly=False,thisIsPrelim=False)
+	    tdr.cmsPrel(36300., 13.,simOnly=False,thisIsPrelim=False)
 	elif(year=='2017'):
 	   tdr.cmsPrel(41500., 13.,simOnly=False,thisIsPrelim=False)
 
@@ -401,21 +423,38 @@ def displayPrePostFitPlot(fitkind):
 
         UncertaintyBandRatio.GetXaxis().SetLimits(min_bin,max_bin)
 	UncertaintyBandRatio.Draw("2A SAME")
-	h_num.Draw("E SAME")
+	h_num.SetMarkerSize(1.3)
+	h_num.Draw("EX0PSAME") #E SAME
 	h_one.Draw("SAME")
 
 	style_histo(UncertaintyBandRatio, 1, 1, 1, 3005, 0)
-	UncertaintyBandRatio.GetXaxis().SetRangeUser(min_bin,max_bin)
+	#UncertaintyBandRatio.GetXaxis().SetRangeUser(min_bin,max_bin)
+	#UncertaintyBandRatio.GetXaxis().SetXMin(1)
+        #UncertaintyBandRatio.GetXaxis().SetXMax(5)
+	#UncertaintyBandRatio.GetXaxis().SetLimits(min_bin,max_bin)
+	xbins = [] #double* xbins = new double[5];
+	#xbins[0] = 1; xbins[1] = 2; xbins[2] = 3; xbins[3] = 4; xbins[4] = 5;
+	UncertaintyBandRatio.GetXaxis().Set(4, 1, 5)
+        UncertaintyBandRatio.GetXaxis().SetRange(1,4)
+        UncertaintyBandRatio.GetXaxis().SetNdivisions(4)
+        UncertaintyBandRatio.GetXaxis().SetBinLabel(1,"1")
+        UncertaintyBandRatio.GetXaxis().SetBinLabel(2,"2")
+        UncertaintyBandRatio.GetXaxis().SetBinLabel(3,"3")
+        UncertaintyBandRatio.GetXaxis().SetBinLabel(4,"#geq4")
+
 	UncertaintyBandRatio.SetMinimum(1-ratio_coef)
 	UncertaintyBandRatio.SetMaximum(1+ratio_coef-0.01)
 
 	style_labels_counting(UncertaintyBandRatio, 'Data/MC', title)
+        #UncertaintyBandRatio.SetMarkerSize(1.4)
 	UncertaintyBandRatio.GetYaxis().SetLabelSize(0.13)
 	UncertaintyBandRatio.GetYaxis().SetTitleSize(0.15)
 	UncertaintyBandRatio.GetYaxis().SetTitleOffset(0.4)
-	UncertaintyBandRatio.GetXaxis().SetLabelSize(0.15)
+	UncertaintyBandRatio.GetXaxis().SetLabelSize(0.25)
 	UncertaintyBandRatio.GetXaxis().SetTitleSize(0.17)
 	UncertaintyBandRatio.GetXaxis().SetLabelOffset(0.01)
+
+        TGaxis.SetExponentOffset(-0.07, -0.02, "y")
 
 	resultname = './impacts/'+year+'/'+observable+'_'+year+stimebin+'_'+sfitkind
 	canvas.SaveAs(resultname+'.pdf')
